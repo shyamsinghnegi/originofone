@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Convex
+convex/_generated/
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# build output
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# local only
+CLAUDE.md
+.claude/
+
+# logs
+*.log
+npm-debug.log*
