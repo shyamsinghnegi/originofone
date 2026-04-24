@@ -149,7 +149,7 @@ export default function AdminProductsPage() {
       </form>
 
       <div className="grid gap-2">
-        {products?.map((product) => (
+        {products?.map((product: any) => (
           <div
             key={product._id}
             className="border border-[--color-border] rounded-lg px-4 py-3 flex items-center gap-4"

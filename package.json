@@ -8,12 +8,23 @@
     "start": "next start"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1035.0",
+    "@aws-sdk/s3-request-presigner": "^3.1035.0",
+    "@clerk/nextjs": "^7.2.5",
+    "@stripe/react-stripe-js": "^6.2.0",
+    "@stripe/stripe-js": "^9.3.1",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "^4.2.2",
+    "convec": "^0.0.1-security",
+    "convex": "^1.36.0",
     "framer-motion": "^11.3.19",
-    "next": "15.1.0",
+    "next": "^16.2.4",
+    "ngrok": "^5.0.0-beta.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "resend": "^6.12.2",
+    "stripe": "^22.1.0",
+    "svix": "^1.92.2",
     "tailwindcss": "^4.2.2"
   },
   "devDependencies": {

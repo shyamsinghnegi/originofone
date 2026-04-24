@@ -3,61 +3,46 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useUser, useClerk } from '@clerk/nextjs'
 import { useCart } from '@/lib/cartContext'
 
 export function Nav() {
   const { count, openCart } = useCart()
+  const { user, isLoaded } = useUser()
+  const { signOut } = useClerk()
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
   const isHome = pathname === '/'
 
-  // Scroll state for dynamic navbar
   const [isPastHero, setIsPastHero] = useState(false)
 
   useEffect(() => {
-    if (!isHome) return;
-
+    if (!isHome) return
     const handleScroll = () => {
-      // Track when the hero section is completely out of view
       const heroGrid = document.getElementById('hero-grid')
       if (heroGrid) {
-        const rect = heroGrid.getBoundingClientRect()
-        // If the bottom of the hero grid is at or above the nav (60px), it's gone.
-        setIsPastHero(rect.bottom <= 60)
+        setIsPastHero(heroGrid.getBoundingClientRect().bottom <= 60)
       } else {
         setIsPastHero(window.scrollY > window.innerHeight * 3)
       }
     }
-
     window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Initialize on mount
+    handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
   }, [isHome])
 
-  // Determine styles based on scroll state and route.
-  // It now stays transparent until the hero section completely passes.
   const isTransparent = isHome && !isPastHero && !menuOpen
   const showLogo = !isHome || isPastHero
 
-  const navClasses = isTransparent
-    ? 'bg-transparent border-transparent'
-    : 'bg-white border-neutral-200'
+  const navClasses = isTransparent ? 'bg-transparent border-transparent' : 'bg-white border-neutral-200'
+  const linkClasses = isTransparent ? 'text-white/80 hover:text-white' : 'text-neutral-500 hover:text-black'
+  const iconClasses = isTransparent ? 'text-white/90 hover:text-white' : 'text-neutral-500 hover:text-black'
+  const badgeClasses = isTransparent ? 'bg-white text-black' : 'bg-black text-white'
+  const hamburgerLineClasses = isTransparent ? 'bg-white' : 'bg-black'
 
-  const linkClasses = isTransparent
-    ? 'text-white/80 hover:text-white'
-    : 'text-neutral-500 hover:text-black'
-
-  const iconClasses = isTransparent
-    ? 'text-white/90 hover:text-white'
-    : 'text-neutral-500 hover:text-black'
-
-  const badgeClasses = isTransparent
-    ? 'bg-white text-black'
-    : 'bg-black text-white'
-
-  const hamburgerLineClasses = isTransparent
-    ? 'bg-white'
-    : 'bg-black'
+  const initials = user
+    ? (user.firstName?.[0] ?? '') + (user.lastName?.[0] ?? '')
+    : ''
 
   return (
     <nav
@@ -66,21 +51,14 @@ export function Nav() {
     >
       <div className="flex items-center justify-between h-full px-6 md:px-10">
 
-        {/* ── Left nav links (desktop) ── */}
+        {/* Left nav links */}
         <div className="hidden md:flex items-center gap-8">
-          <Link href="/collection" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>
-            Collections
-          </Link>
-          <Link href="/collection" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>
-            New In
-          </Link>
-          <Link href="/about" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>
-            About US
-          </Link>
+          <Link href="/collection" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>Collections</Link>
+          <Link href="/collection" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>New In</Link>
+          <Link href="/about" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>About</Link>
         </div>
 
-        {/* ── Centre logo ──
-            Fades in seamlessly once the main hero logo scrolls away ── */}
+        {/* Centre logo */}
         <div
           className={`absolute left-1/2 -translate-x-1/2 top-1/2 transition-all duration-500 ${
             showLogo ? 'opacity-100 pointer-events-auto -translate-y-1/2' : 'opacity-0 pointer-events-none -translate-y-[30%]'
@@ -96,7 +74,7 @@ export function Nav() {
           </Link>
         </div>
 
-        {/* ── Mobile hamburger ── */}
+        {/* Mobile hamburger */}
         <button
           className="md:hidden flex flex-col gap-[5px] p-1"
           onClick={() => setMenuOpen(v => !v)}
@@ -107,18 +85,36 @@ export function Nav() {
           <span className={`block w-5 h-px transition-all duration-300 ${hamburgerLineClasses} ${menuOpen ? '-rotate-45 -translate-y-[6px]' : ''}`} />
         </button>
 
-        {/* ── Right icons ── */}
+        {/* Right icons */}
         <div className="flex items-center gap-5">
           <button aria-label="Search" className={`transition-colors ${iconClasses}`}>
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </button>
-          <Link href="/account" className={`hidden md:block transition-colors ${iconClasses}`} aria-label="Account">
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-            </svg>
-          </Link>
+
+          {/* Account — shows initials bubble if signed in, otherwise icon */}
+          {isLoaded && (
+            user ? (
+              <Link href="/account" className={`hidden md:flex items-center justify-center transition-colors ${iconClasses}`} aria-label="Account">
+                {initials ? (
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium border ${isTransparent ? 'border-white/60 text-white' : 'border-neutral-300 text-neutral-600'}`}>
+                    {initials.toUpperCase()}
+                  </span>
+                ) : (
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                  </svg>
+                )}
+              </Link>
+            ) : (
+              <Link href="/sign-in" className={`hidden md:block text-[10px] tracking-widest uppercase transition-colors ${linkClasses}`}>
+                Sign In
+              </Link>
+            )
+          )}
+
+          {/* Cart */}
           <button
             onClick={openCart}
             className={`relative transition-colors ${iconClasses}`}
@@ -138,13 +134,25 @@ export function Nav() {
         </div>
       </div>
 
-      {/* ── Mobile slide-down menu ── */}
-      <div className={`md:hidden bg-white border-t border-neutral-200 overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-64' : 'max-h-0'}`}>
+      {/* Mobile slide-down menu */}
+      <div className={`md:hidden bg-white border-t border-neutral-200 overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-72' : 'max-h-0'}`}>
         <div className="flex flex-col px-6 py-5 gap-5">
           <Link href="/collection" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Collections</Link>
           <Link href="/collection" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>New In</Link>
-          <Link href="/about"      className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>About</Link>
-          <Link href="/account"    className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Account</Link>
+          <Link href="/about" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>About</Link>
+          {user ? (
+            <>
+              <Link href="/account" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Account</Link>
+              <button
+                onClick={() => { setMenuOpen(false); signOut().then(() => {}) }}
+                className="text-[11px] tracking-widest uppercase text-neutral-400 text-left"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <Link href="/sign-in" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Sign In</Link>
+          )}
         </div>
       </div>
     </nav>

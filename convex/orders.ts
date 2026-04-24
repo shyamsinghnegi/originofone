@@ -127,37 +127,31 @@ export const create = mutation({
   },
 });
 
-export const attachRazorpayOrder = internalMutation({
+export const attachStripeIntent = internalMutation({
   args: {
     orderId: v.id("orders"),
-    razorpayOrderId: v.string(),
+    stripePaymentIntentId: v.string(),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.orderId, {
-      razorpayOrderId: args.razorpayOrderId,
+      stripePaymentIntentId: args.stripePaymentIntentId,
     });
   },
 });
 
-export const markPaid = internalMutation({
-  args: {
-    razorpayOrderId: v.string(),
-    razorpayPaymentId: v.string(),
-  },
+// Public so the Stripe webhook (Next.js route) can call it via ConvexHttpClient
+export const markPaid = mutation({
+  args: { stripePaymentIntentId: v.string() },
   handler: async (ctx, args) => {
     const order = await ctx.db
       .query("orders")
-      .withIndex("by_razorpay_order_id", (q) =>
-        q.eq("razorpayOrderId", args.razorpayOrderId)
+      .withIndex("by_stripe_payment_intent", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
       )
       .unique();
     if (!order) throw new Error("Order not found");
 
-    await ctx.db.patch(order._id, {
-      status: "paid",
-      razorpayPaymentId: args.razorpayPaymentId,
-    });
-
+    await ctx.db.patch(order._id, { status: "paid" });
     await ctx.runMutation(internal.cart.clear, { userId: order.userId });
     await ctx.runMutation(internal.products.decrementStock, {
       items: order.items.map((i) => ({
@@ -172,13 +166,13 @@ export const markPaid = internalMutation({
   },
 });
 
-export const markCancelled = internalMutation({
-  args: { razorpayOrderId: v.string() },
+export const markCancelled = mutation({
+  args: { stripePaymentIntentId: v.string() },
   handler: async (ctx, args) => {
     const order = await ctx.db
       .query("orders")
-      .withIndex("by_razorpay_order_id", (q) =>
-        q.eq("razorpayOrderId", args.razorpayOrderId)
+      .withIndex("by_stripe_payment_intent", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
       )
       .unique();
     if (!order) return;

@@ -10,12 +10,12 @@ export default function AdminDashboard() {
   const stats = orders
     ? {
         total: orders.length,
-        paid: orders.filter((o) => o.status === "paid").length,
-        processing: orders.filter((o) => o.status === "processing").length,
-        shipped: orders.filter((o) => o.status === "shipped").length,
+        paid: orders.filter((o: any) => o.status === "paid").length,
+        processing: orders.filter((o: any) => o.status === "processing").length,
+        shipped: orders.filter((o: any) => o.status === "shipped").length,
         revenue: orders
-          .filter((o) => o.status !== "cancelled" && o.status !== "pending")
-          .reduce((sum, o) => sum + o.total, 0),
+          .filter((o: any) => o.status !== "cancelled" && o.status !== "pending")
+          .reduce((sum: any, o: any) => sum + o.total, 0),
       }
     : null;
 
@@ -50,13 +50,13 @@ export default function AdminDashboard() {
         <div className="border border-[--color-border] rounded-lg p-4">
           <p className="text-xs text-[--color-muted] mb-1">Active Products</p>
           <p className="text-2xl font-semibold">
-            {products?.filter((p) => p.isActive).length ?? "—"}
+            {products?.filter((p: any) => p.isActive).length ?? "—"}
           </p>
         </div>
         <div className="border border-[--color-border] rounded-lg p-4">
           <p className="text-xs text-[--color-muted] mb-1">Orders Awaiting Payment</p>
           <p className="text-2xl font-semibold">
-            {orders?.filter((o) => o.status === "pending").length ?? "—"}
+            {orders?.filter((o: any) => o.status === "pending").length ?? "—"}
           </p>
         </div>
       </div>

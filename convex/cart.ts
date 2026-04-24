@@ -57,14 +57,14 @@ export const upsertItem = mutation({
     const cart = await getOrCreateCart(ctx, user._id);
     const key = `${args.item.productId}-${args.item.color}-${args.item.size}`;
     const existing = cart!.items.find(
-      (i) =>
+      (i: any) =>
         i.productId === args.item.productId &&
         i.color === args.item.color &&
         i.size === args.item.size
     );
 
     const items = existing
-      ? cart!.items.map((i) =>
+      ? cart!.items.map((i: any) =>
           i.productId === args.item.productId &&
           i.color === args.item.color &&
           i.size === args.item.size

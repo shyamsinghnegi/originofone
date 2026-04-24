@@ -128,7 +128,7 @@ export default function HomePage() {
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                top: '85%',
+                top: "85%",
                 transform: 'translateY(-50%)',
                 fontSize: 'clamp(2.5rem, 8vw, 8rem)',
                 whiteSpace: 'nowrap',

@@ -80,8 +80,7 @@ export default defineSchema({
       v.literal("cancelled"),
       v.literal("refunded")
     ),
-    razorpayOrderId: v.optional(v.string()),
-    razorpayPaymentId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
     shippingAddress: v.object({
       line1: v.string(),
       line2: v.optional(v.string()),
@@ -105,7 +104,7 @@ export default defineSchema({
     notes: v.optional(v.string()),
   })
     .index("by_user_id", ["userId"])
-    .index("by_razorpay_order_id", ["razorpayOrderId"])
+    .index("by_stripe_payment_intent", ["stripePaymentIntentId"])
     .index("by_status", ["status"]),
 
   cart: defineTable({

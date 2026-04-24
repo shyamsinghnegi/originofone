@@ -119,7 +119,7 @@ export default function AdminOrdersPage() {
       )}
 
       <div className="grid gap-3">
-        {orders?.map((order) => (
+        {orders?.map((order: any) => (
           <div
             key={order._id}
             className="border border-[--color-border] rounded-lg p-4"

@@ -22,7 +22,7 @@ export const sendOrderConfirmation = internalAction({
 
     const resend = getResend();
     const itemsList = order.items
-      .map((i) => `${i.name} (${i.color}, ${i.size}) × ${i.quantity} — $${i.price.toFixed(2)}`)
+      .map((i: any) => `${i.name} (${i.color}, ${i.size}) × ${i.quantity} — $${i.price.toFixed(2)}`)
       .join("\n");
 
     await resend.emails.send({

@@ -31,6 +31,9 @@ Thumbs.db
 CLAUDE.md
 .claude/
 
+# build artifacts
+tsconfig.tsbuildinfo
+
 # logs
 *.log
 npm-debug.log*
