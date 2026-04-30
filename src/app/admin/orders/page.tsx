@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import { Id } from "@/../convex/_generated/dataModel";
 
@@ -24,13 +24,14 @@ type StatusFilter =
   | "refunded";
 
 export default function AdminOrdersPage() {
+  const { isAuthenticated } = useConvexAuth();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [trackingOrderId, setTrackingOrderId] = useState<Id<"orders"> | null>(null);
   const [tracking, setTracking] = useState({ carrier: "", trackingNumber: "", url: "" });
 
   const orders = useQuery(
     api.orders.listAll,
-    statusFilter === "all" ? {} : { status: statusFilter as any }
+    isAuthenticated ? (statusFilter === "all" ? {} : { status: statusFilter as any }) : "skip"
   );
   const updateStatus = useMutation(api.orders.updateStatus);
   const updateTracking = useMutation(api.orders.updateTracking);

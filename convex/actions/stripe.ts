@@ -1,3 +1,4 @@
+"use node";
 import Stripe from "stripe";
 import { v } from "convex/values";
 import { action } from "../_generated/server";

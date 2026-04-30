@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import { Id } from "@/../convex/_generated/dataModel";
 
@@ -26,7 +26,8 @@ const emptyForm: ProductForm = {
 };
 
 export default function AdminProductsPage() {
-  const products = useQuery(api.products.listAdmin, {});
+  const { isAuthenticated } = useConvexAuth();
+  const products = useQuery(api.products.listAdmin, isAuthenticated ? {} : "skip");
   const createProduct = useMutation(api.products.create);
   const updateProduct = useMutation(api.products.update);
   const removeProduct = useMutation(api.products.remove);

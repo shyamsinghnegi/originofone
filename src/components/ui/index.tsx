@@ -211,7 +211,7 @@ function darken(hex: string, amt: number): string {
 // ── Footer ───────────────────────────────────────────────
 export function Footer() {
   return (
-    <footer className="border-t border-neutral-200 mt-24 bg-white">
+    <footer className="border-t border-neutral-200 bg-white">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8 px-6 md:px-10 py-12">
         <div className="col-span-2 md:col-span-1">
           <p className="font-serif text-base tracking-[0.2em] uppercase mb-3 text-black">Origin of One</p>

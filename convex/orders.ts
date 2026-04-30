@@ -25,6 +25,12 @@ const shippingAddressSchema = v.object({
 async function requireAdmin(ctx: any) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthenticated");
+
+  // Check JWT role claim first (populated by Clerk JWT template custom claim)
+  const jwtRole = (identity as any).role;
+  if (jwtRole === "admin") return { clerkId: identity.subject, role: "admin" };
+
+  // Fall back to DB lookup
   const user = await ctx.db
     .query("users")
     .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", identity.subject))

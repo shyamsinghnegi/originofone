@@ -17,7 +17,7 @@ const CATEGORIES = [
 
 const HERO_SLIDES = [
   { bg: '#0a0a0a', eyebrow: 'Est. Canada · Winter 2025',  label: 'SHOP COLLECTION', href: '/collection', figure: 'rgba(255,255,255,0.07)' },
-  { bg: '#111111', eyebrow: 'New Arrivals · Just Landed', label: 'NEW IN',           href: '/collection', figure: 'rgba(255,255,255,0.06)' },
+  { bg: '#111111', eyebrow: 'New Arrivals · Just Landed', label: 'NEW IN',           href: '/new-in', figure: 'rgba(255,255,255,0.06)' },
   { 
     isSplit: true, 
     left:  { bg: '#1a1a1a', eyebrow: 'Womenswear', label: 'SHOP WOMEN', href: '/collection', figure: 'rgba(255,255,255,0.08)' },

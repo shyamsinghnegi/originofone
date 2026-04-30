@@ -1,16 +1,17 @@
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
-// Role check is also enforced in middleware; this is a defence-in-depth guard.
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { sessionClaims } = await auth();
-  const role = (sessionClaims?.metadata as any)?.role;
-  if (role !== "admin") redirect("/");
+  // currentUser() fetches fresh data including publicMetadata (not cached in JWT)
+  const user = await currentUser();
+  if (!user) redirect("/sign-in");
+  const role = (user.publicMetadata as any)?.role;
+  if (role !== "admin") redirect("/unauthorized");
 
   return (
     <div className="min-h-screen flex">

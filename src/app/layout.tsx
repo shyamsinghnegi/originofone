@@ -7,6 +7,7 @@ import { Nav } from '@/components/layout/Nav'
 import { CartDrawer } from '@/components/layout/CartDrawer'
 import { SmoothScroll } from '@/components/layout/SmoothScroll'
 import { ZoomLock } from '@/components/layout/ZoomLock'
+import { UserSync } from '@/components/layout/UserSync'
 
 export const metadata: Metadata = {
   title: 'Origin of One — Canadian Winter Clothing',
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body>
           <ConvexClerkProvider>
             <CartProvider>
+              <UserSync />
               <ZoomLock />
               <SmoothScroll />
               <Nav />

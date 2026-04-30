@@ -1,5 +1,5 @@
 import { internalAction } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -11,7 +11,7 @@ export const checkAbandonedCarts = internalAction({
     });
 
     for (const cart of abandonedCarts) {
-      const user = await ctx.runQuery(internal.users.getByClerkId, {
+      const user = await ctx.runQuery(api.users.getByClerkId, {
         clerkId: cart.userId as any,
       });
       if (!user) continue;

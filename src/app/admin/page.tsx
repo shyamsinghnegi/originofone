@@ -1,11 +1,13 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { useConvexAuth } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 
 export default function AdminDashboard() {
-  const orders = useQuery(api.orders.listAll, {});
-  const products = useQuery(api.products.listAdmin, {});
+  const { isAuthenticated } = useConvexAuth();
+  const orders = useQuery(api.orders.listAll, isAuthenticated ? {} : "skip");
+  const products = useQuery(api.products.listAdmin, isAuthenticated ? {} : "skip");
 
   const stats = orders
     ? {

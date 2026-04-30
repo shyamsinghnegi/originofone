@@ -9,6 +9,7 @@ const address = v.object({
   province: v.string(),
   postalCode: v.string(),
   country: v.string(),
+  phone: v.optional(v.string()),
   isDefault: v.boolean(),
 });
 
@@ -28,6 +29,10 @@ export default defineSchema({
     clerkId: v.string(),
     email: v.string(),
     name: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    gender: v.optional(v.string()),
+    dob: v.optional(v.string()),
+    onboardingComplete: v.optional(v.boolean()),
     role: v.union(v.literal("customer"), v.literal("admin")),
     addresses: v.array(address),
   })

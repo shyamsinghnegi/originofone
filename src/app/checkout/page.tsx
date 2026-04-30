@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useCart } from '@/lib/cartContext'
+import { useUser } from '@clerk/nextjs'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '@/../convex/_generated/api'
 import { Footer } from '@/components/ui'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -15,6 +18,7 @@ interface ShippingData {
   email: string
   firstName: string
   lastName: string
+  phone: string
   line1: string
   line2: string
   city: string
@@ -23,27 +27,36 @@ interface ShippingData {
   country: string
 }
 
-// ── Stripe inner component (needs Elements context) ──────────────────────────
+const EMPTY_SHIPPING: ShippingData = {
+  email: '', firstName: '', lastName: '', phone: '',
+  line1: '', line2: '',
+  city: '', province: '', postalCode: '', country: 'Canada',
+}
+
+function FieldInput({ label, required, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; required?: boolean }) {
+  return (
+    <div>
+      <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">
+        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      </label>
+      <input
+        {...props}
+        className={`w-full border px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors placeholder:text-neutral-300 ${
+          props.className ?? 'border-neutral-200'
+        }`}
+      />
+    </div>
+  )
+}
+
+// ── Stripe inner component ────────────────────────────────────────────────────
 function StripeSteps({
-  step,
-  onBack,
-  onNextFromPayment,
-  shipping,
-  shippingMethod,
-  shippingCost,
-  taxes,
-  subtotal,
-  orderTotal,
+  step, onBack, onNextFromPayment,
+  shipping, shippingMethod, shippingCost, taxes, subtotal, orderTotal,
 }: {
-  step: number
-  onBack: () => void
-  onNextFromPayment: () => void
-  shipping: ShippingData
-  shippingMethod: string
-  shippingCost: number
-  taxes: number
-  subtotal: number
-  orderTotal: number
+  step: number; onBack: () => void; onNextFromPayment: () => void
+  shipping: ShippingData; shippingMethod: string
+  shippingCost: number; taxes: number; subtotal: number; orderTotal: number
 }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -69,7 +82,6 @@ function StripeSteps({
     }
   }
 
-  // ── Step 2: Payment ──────────────────────────────────────────────────────
   if (step === 2) {
     return (
       <div>
@@ -91,17 +103,13 @@ function StripeSteps({
     )
   }
 
-  // ── Step 3: Review ───────────────────────────────────────────────────────
   return (
     <div>
       <h2 className="font-serif text-2xl mb-8 text-black">Review Order</h2>
 
-      {/* Items */}
       <div className="border border-neutral-200 mb-5">
-        <div className="px-5 py-3 border-b border-neutral-200 flex justify-between items-center">
-          <p className="text-[10px] tracking-widest uppercase text-neutral-400">
-            Items ({items.reduce((s, i) => s + i.qty, 0)})
-          </p>
+        <div className="px-5 py-3 border-b border-neutral-200">
+          <p className="text-[10px] tracking-widest uppercase text-neutral-400">Items ({items.reduce((s, i) => s + i.qty, 0)})</p>
         </div>
         <div className="px-5 py-4 space-y-2.5">
           {items.map(item => (
@@ -113,48 +121,43 @@ function StripeSteps({
         </div>
       </div>
 
-      {/* Ship to */}
       <div className="border border-neutral-200 mb-5">
-        <div className="px-5 py-3 border-b border-neutral-200 flex justify-between items-center">
+        <div className="px-5 py-3 border-b border-neutral-200">
           <p className="text-[10px] tracking-widest uppercase text-neutral-400">Ship to</p>
         </div>
         <div className="px-5 py-4 text-[13px] text-neutral-500 leading-relaxed">
-          {shipping.firstName} {shipping.lastName}<br />
+          {shipping.firstName} {shipping.lastName}{shipping.phone ? ` · ${shipping.phone}` : ''}<br />
           {shipping.line1}{shipping.line2 ? `, ${shipping.line2}` : ''}<br />
           {shipping.city}, {shipping.province} {shipping.postalCode}<br />
           {shipping.country}
         </div>
       </div>
 
-      {/* Shipping method */}
       <div className="border border-neutral-200 mb-5">
         <div className="px-5 py-3 border-b border-neutral-200">
           <p className="text-[10px] tracking-widest uppercase text-neutral-400">Shipping</p>
         </div>
         <div className="px-5 py-4 text-[13px] text-neutral-500">
           {shippingMethod === 'standard' ? 'Standard (5–7 days) — Free'
-            : shippingMethod === 'express' ? `Express (2–3 days) — $14.99`
-            : `Overnight (next day) — $29.99`}
+            : shippingMethod === 'express' ? 'Express (2–3 days) — $14.99'
+            : 'Overnight (next day) — $29.99'}
         </div>
       </div>
 
-      {/* Total breakdown */}
       <div className="border border-neutral-200 mb-8">
         <div className="px-5 py-3 border-b border-neutral-200">
           <p className="text-[10px] tracking-widest uppercase text-neutral-400">Order Total</p>
         </div>
         <div className="px-5 py-4 space-y-2">
           <div className="flex justify-between text-[12px]">
-            <span className="text-neutral-500">Subtotal</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span className="text-neutral-500">Subtotal</span><span>${subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-[12px]">
             <span className="text-neutral-500">Shipping</span>
             <span>{shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`}</span>
           </div>
           <div className="flex justify-between text-[12px]">
-            <span className="text-neutral-500">Tax (13% HST)</span>
-            <span>${taxes.toFixed(2)}</span>
+            <span className="text-neutral-500">Tax (13% HST)</span><span>${taxes.toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-baseline border-t border-neutral-200 pt-3 mt-1">
             <span className="text-[11px] tracking-widest uppercase text-black">Total</span>
@@ -164,11 +167,8 @@ function StripeSteps({
       </div>
 
       {error && <p className="text-red-500 text-[12px] mb-4">{error}</p>}
-
       <div className="flex items-center gap-4">
-        <button onClick={onBack} className="text-[11px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors shrink-0">
-          ← Back
-        </button>
+        <button onClick={onBack} className="text-[11px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors shrink-0">← Back</button>
         <button
           onClick={handlePlaceOrder}
           disabled={!stripe || loading}
@@ -187,54 +187,125 @@ function StripeSteps({
 // ── Main checkout page ────────────────────────────────────────────────────────
 export default function CheckoutPage() {
   const { items, total, updateQty, removeItem } = useCart()
+  const { user } = useUser()
+  const convexUser = useQuery(api.users.me)
+  const saveAddress = useMutation(api.users.addAddress)
+
   const [step, setStep] = useState(0)
   const [maxStep, setMaxStep] = useState(0)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [saveAddressChecked, setSaveAddressChecked] = useState(false)
 
-  const [shipping, setShipping] = useState<ShippingData>({
-    email: '', firstName: '', lastName: '',
-    line1: '', line2: '',
-    city: 'Toronto', province: 'Ontario', postalCode: 'M5V 2T6', country: 'Canada',
-  })
+  const [shipping, setShipping] = useState<ShippingData>(EMPTY_SHIPPING)
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'express' | 'overnight'>('standard')
 
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [intentLoading, setIntentLoading] = useState(false)
   const [intentError, setIntentError] = useState<string | null>(null)
 
+  // Autofill from Clerk user + saved Convex addresses
+  useEffect(() => {
+    if (!user) return
+    setShipping(s => ({
+      ...s,
+      email: s.email || (user.primaryEmailAddress?.emailAddress ?? ''),
+      firstName: s.firstName || (user.firstName ?? ''),
+      lastName: s.lastName || (user.lastName ?? ''),
+    }))
+  }, [user])
+
+  useEffect(() => {
+    if (!convexUser) return
+    const defaultAddr = convexUser.addresses?.find((a: any) => a.isDefault) ?? convexUser.addresses?.[0]
+    if (defaultAddr) {
+      setShipping(s => ({
+        ...s,
+        phone: s.phone || defaultAddr.phone || '',
+        line1: s.line1 || defaultAddr.line1 || '',
+        line2: s.line2 || defaultAddr.line2 || '',
+        city: s.city || defaultAddr.city || '',
+        province: s.province || defaultAddr.province || '',
+        postalCode: s.postalCode || defaultAddr.postalCode || '',
+        country: s.country || defaultAddr.country || 'Canada',
+      }))
+    }
+  }, [convexUser])
+
   const shippingCost = shippingMethod === 'standard' ? 0 : shippingMethod === 'express' ? 14.99 : 29.99
   const taxes = (total + shippingCost) * 0.13
   const orderTotal = total + shippingCost + taxes
 
+  const REQUIRED_FIELDS: (keyof ShippingData)[] = ['email', 'firstName', 'lastName', 'line1', 'city', 'province', 'postalCode']
+
+  function validateShipping(): string | null {
+    for (const field of REQUIRED_FIELDS) {
+      if (!shipping[field].trim()) {
+        const labels: Record<string, string> = {
+          email: 'Email', firstName: 'First name', lastName: 'Last name',
+          line1: 'Street address', city: 'City', province: 'Province', postalCode: 'Postal code',
+        }
+        return `${labels[field]} is required.`
+      }
+    }
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRe.test(shipping.email)) return 'Please enter a valid email address.'
+    return null
+  }
+
   const goToStep = async (target: number) => {
-    // Going back past step 2 clears the PaymentIntent so amount stays accurate
     if (target < 2 && clientSecret) setClientSecret(null)
 
-    // Entering step 2 for the first time (or after clearing): create PaymentIntent
-    if (target === 2 && !clientSecret) {
-      setIntentLoading(true)
-      setIntentError(null)
-      try {
-        const res = await fetch('/api/create-payment-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amountInCents: Math.round(orderTotal * 100) }),
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error ?? 'Failed to initialize payment')
-        setClientSecret(data.clientSecret)
-      } catch (err: unknown) {
-        setIntentError(err instanceof Error ? err.message : 'Failed to initialize payment')
-        setIntentLoading(false)
-        return
+    if (target === 2) {
+      const err = validateShipping()
+      if (err) { setValidationError(err); return }
+      setValidationError(null)
+
+      // Optionally save the address
+      if (saveAddressChecked && convexUser) {
+        try {
+          await saveAddress({
+            address: {
+              id: crypto.randomUUID(),
+              line1: shipping.line1,
+              line2: shipping.line2 || undefined,
+              city: shipping.city,
+              province: shipping.province,
+              postalCode: shipping.postalCode,
+              country: shipping.country,
+              phone: shipping.phone || undefined,
+              isDefault: convexUser.addresses?.length === 0,
+            },
+          })
+        } catch {}
       }
-      setIntentLoading(false)
+
+      if (!clientSecret) {
+        setIntentLoading(true)
+        setIntentError(null)
+        try {
+          const res = await fetch('/api/create-payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amountInCents: Math.round(orderTotal * 100) }),
+          })
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error ?? 'Failed to initialize payment')
+          setClientSecret(data.clientSecret)
+        } catch (err: unknown) {
+          setIntentError(err instanceof Error ? err.message : 'Failed to initialize payment')
+          setIntentLoading(false)
+          return
+        }
+        setIntentLoading(false)
+      }
     }
 
     setStep(target)
     setMaxStep(m => Math.max(m, target))
   }
 
-  // Right-side summary (always visible)
+  const hasSavedAddresses = (convexUser?.addresses?.length ?? 0) > 0
+
   const OrderSummary = () => (
     <div className="px-6 md:px-8 py-10 bg-neutral-50">
       <h2 className="font-serif text-2xl mb-6 text-black">Order Summary</h2>
@@ -259,8 +330,7 @@ export default function CheckoutPage() {
       </div>
       <div className="space-y-2 border-t border-neutral-200 pt-4">
         <div className="flex justify-between text-[12px]">
-          <span className="text-neutral-500">Subtotal</span>
-          <span>${total.toFixed(2)}</span>
+          <span className="text-neutral-500">Subtotal</span><span>${total.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-[12px]">
           <span className="text-neutral-500">Shipping</span>
@@ -269,8 +339,7 @@ export default function CheckoutPage() {
           </span>
         </div>
         <div className="flex justify-between text-[12px]">
-          <span className="text-neutral-500">Taxes (13%)</span>
-          <span>${taxes.toFixed(2)}</span>
+          <span className="text-neutral-500">Taxes (13%)</span><span>${taxes.toFixed(2)}</span>
         </div>
         <div className="border-t border-neutral-200 pt-3 flex justify-between items-baseline">
           <span className="text-[11px] tracking-widest uppercase text-black">Total</span>
@@ -283,7 +352,7 @@ export default function CheckoutPage() {
   return (
     <>
       <div style={{ paddingTop: 'var(--nav-height, 60px)' }}>
-        {/* ── Step indicator ── */}
+        {/* Step indicator */}
         <div className="border-b border-neutral-200 px-6 md:px-10 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-3">
             {STEP_LABELS.map((label, i) => (
@@ -292,19 +361,15 @@ export default function CheckoutPage() {
                   onClick={() => i <= maxStep ? goToStep(i) : undefined}
                   disabled={i > maxStep}
                   className={`text-[10px] tracking-widest uppercase transition-colors ${
-                    i === step
-                      ? 'text-black'
-                      : i < step
-                      ? 'text-neutral-400 hover:text-black'
-                      : 'text-neutral-300 cursor-default'
+                    i === step ? 'text-black'
+                    : i < step ? 'text-neutral-400 hover:text-black'
+                    : 'text-neutral-300 cursor-default'
                   }`}
                 >
                   <span className="font-medium mr-1">{i + 1}</span>
                   <span className="hidden sm:inline">{label}</span>
                 </button>
-                {i < STEP_LABELS.length - 1 && (
-                  <span className="text-neutral-200 text-xs">—</span>
-                )}
+                {i < STEP_LABELS.length - 1 && <span className="text-neutral-200 text-xs">—</span>}
               </div>
             ))}
           </div>
@@ -317,10 +382,9 @@ export default function CheckoutPage() {
         </div>
 
         <div className="grid md:grid-cols-[1fr_380px] min-h-[calc(100vh-var(--nav-height,60px))]">
-          {/* ── Left: active step ── */}
           <div className="px-6 md:px-12 py-10 border-r border-neutral-200">
 
-            {/* ── Step 0: Cart ── */}
+            {/* Step 0: Cart */}
             {step === 0 && (
               <div>
                 <h2 className="font-serif text-2xl mb-6 text-black">Your Cart</h2>
@@ -338,22 +402,11 @@ export default function CheckoutPage() {
                           <p className="text-[11px] text-neutral-400 mb-2.5">{item.color} · {item.size}</p>
                           <div className="flex items-center gap-3">
                             <div className="flex items-center border border-neutral-200">
-                              <button
-                                onClick={() => updateQty(item.id, item.size, item.qty - 1)}
-                                className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-black transition-colors"
-                              >−</button>
+                              <button onClick={() => updateQty(item.id, item.size, item.qty - 1)} className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-black transition-colors">−</button>
                               <span className="w-8 h-7 border-x border-neutral-200 flex items-center justify-center text-[12px]">{item.qty}</span>
-                              <button
-                                onClick={() => updateQty(item.id, item.size, item.qty + 1)}
-                                className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-black transition-colors"
-                              >+</button>
+                              <button onClick={() => updateQty(item.id, item.size, item.qty + 1)} className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-black transition-colors">+</button>
                             </div>
-                            <button
-                              onClick={() => removeItem(item.id, item.size)}
-                              className="text-[11px] text-neutral-400 hover:text-black transition-colors underline"
-                            >
-                              Remove
-                            </button>
+                            <button onClick={() => removeItem(item.id, item.size)} className="text-[11px] text-neutral-400 hover:text-black transition-colors underline">Remove</button>
                           </div>
                         </div>
                         <p className="text-[13px] text-black shrink-0">${(item.price * item.qty).toFixed(2)}</p>
@@ -371,21 +424,31 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* ── Step 1: Shipping ── */}
+            {/* Step 1: Shipping */}
             {step === 1 && (
               <div>
+                {/* Saved address banner */}
+                {hasSavedAddresses && (
+                  <div className="mb-8 border border-neutral-200 px-4 py-3 bg-neutral-50 flex items-center justify-between gap-4">
+                    <p className="text-[12px] text-neutral-500">Using your saved address.</p>
+                    <button
+                      onClick={() => {
+                        const defaultAddr = convexUser?.addresses?.find((a: any) => a.isDefault) ?? convexUser?.addresses?.[0]
+                        if (defaultAddr) setShipping(s => ({ ...s, ...defaultAddr, phone: defaultAddr.phone ?? '' }))
+                      }}
+                      className="text-[11px] tracking-widest uppercase text-black border-b border-black pb-0.5"
+                    >
+                      Autofill →
+                    </button>
+                  </div>
+                )}
+
                 {/* Contact */}
                 <section className="mb-10">
                   <h2 className="font-serif text-2xl mb-6 text-black">Contact</h2>
-                  <div>
-                    <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">Email Address</label>
-                    <input
-                      type="email"
-                      value={shipping.email}
-                      onChange={e => setShipping(s => ({ ...s, email: e.target.value }))}
-                      placeholder="you@example.com"
-                      className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors placeholder:text-neutral-300"
-                    />
+                  <div className="space-y-4">
+                    <FieldInput label="Email Address" required type="email" value={shipping.email} onChange={e => setShipping(s => ({ ...s, email: e.target.value }))} placeholder="you@example.com" />
+                    <FieldInput label="Phone Number" type="tel" value={shipping.phone} onChange={e => setShipping(s => ({ ...s, phone: e.target.value }))} placeholder="+1 (416) 000-0000" />
                   </div>
                 </section>
 
@@ -394,45 +457,34 @@ export default function CheckoutPage() {
                   <h2 className="font-serif text-2xl mb-6 text-black">Shipping Address</h2>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">First Name</label>
-                        <input type="text" value={shipping.firstName} onChange={e => setShipping(s => ({ ...s, firstName: e.target.value }))} className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">Last Name</label>
-                        <input type="text" value={shipping.lastName} onChange={e => setShipping(s => ({ ...s, lastName: e.target.value }))} className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors" />
-                      </div>
+                      <FieldInput label="First Name" required value={shipping.firstName} onChange={e => setShipping(s => ({ ...s, firstName: e.target.value }))} />
+                      <FieldInput label="Last Name" required value={shipping.lastName} onChange={e => setShipping(s => ({ ...s, lastName: e.target.value }))} />
                     </div>
-                    <div>
-                      <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">Street Address</label>
-                      <input type="text" value={shipping.line1} onChange={e => setShipping(s => ({ ...s, line1: e.target.value }))} className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">Apartment / Suite (Optional)</label>
-                      <input type="text" value={shipping.line2} onChange={e => setShipping(s => ({ ...s, line2: e.target.value }))} className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors" />
+                    <FieldInput label="Street Address" required value={shipping.line1} onChange={e => setShipping(s => ({ ...s, line1: e.target.value }))} />
+                    <FieldInput label="Apartment / Suite (Optional)" value={shipping.line2} onChange={e => setShipping(s => ({ ...s, line2: e.target.value }))} />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FieldInput label="City" required value={shipping.city} onChange={e => setShipping(s => ({ ...s, city: e.target.value }))} />
+                      <FieldInput label="Province" required value={shipping.province} onChange={e => setShipping(s => ({ ...s, province: e.target.value }))} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">City</label>
-                        <input type="text" value={shipping.city} onChange={e => setShipping(s => ({ ...s, city: e.target.value }))} className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">Province</label>
-                        <input type="text" value={shipping.province} onChange={e => setShipping(s => ({ ...s, province: e.target.value }))} className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">Postal Code</label>
-                        <input type="text" value={shipping.postalCode} onChange={e => setShipping(s => ({ ...s, postalCode: e.target.value }))} className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">Country</label>
-                        <input type="text" value={shipping.country} onChange={e => setShipping(s => ({ ...s, country: e.target.value }))} className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors" />
-                      </div>
+                      <FieldInput label="Postal Code" required value={shipping.postalCode} onChange={e => setShipping(s => ({ ...s, postalCode: e.target.value }))} />
+                      <FieldInput label="Country" value={shipping.country} onChange={e => setShipping(s => ({ ...s, country: e.target.value }))} />
                     </div>
                   </div>
                 </section>
+
+                {/* Save address prompt */}
+                {user && (
+                  <label className="flex items-center gap-3 mb-8 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveAddressChecked}
+                      onChange={e => setSaveAddressChecked(e.target.checked)}
+                      className="accent-black w-4 h-4"
+                    />
+                    <span className="text-[12px] text-neutral-500">Save this address to my account for faster checkout</span>
+                  </label>
+                )}
 
                 {/* Shipping method */}
                 <section className="mb-10">
@@ -449,34 +501,23 @@ export default function CheckoutPage() {
                           shippingMethod === opt.key ? 'border-black' : 'border-neutral-200 hover:border-neutral-400'
                         }`}
                       >
-                        <input
-                          type="radio"
-                          name="shipping"
-                          value={opt.key}
-                          checked={shippingMethod === opt.key as typeof shippingMethod}
-                          onChange={() => setShippingMethod(opt.key as typeof shippingMethod)}
-                          className="accent-black"
-                        />
+                        <input type="radio" name="shipping" value={opt.key} checked={shippingMethod === opt.key as typeof shippingMethod} onChange={() => setShippingMethod(opt.key as typeof shippingMethod)} className="accent-black" />
                         <div className="flex-1">
                           <p className="text-[13px] text-black">{opt.label}</p>
                           <p className="text-[11px] text-neutral-400">{opt.sub}</p>
                         </div>
-                        <span className={`text-[12px] ${opt.price === 'Free' ? 'text-black' : 'text-neutral-500'}`}>
-                          {opt.price}
-                        </span>
+                        <span className={`text-[12px] ${opt.price === 'Free' ? 'text-black' : 'text-neutral-500'}`}>{opt.price}</span>
                       </label>
                     ))}
                   </div>
                 </section>
 
+                {validationError && (
+                  <p className="text-red-500 text-[12px] mb-4">{validationError}</p>
+                )}
                 {intentError && <p className="text-red-500 text-[12px] mb-4">{intentError}</p>}
                 <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => goToStep(0)}
-                    className="text-[11px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors shrink-0"
-                  >
-                    ← Back
-                  </button>
+                  <button onClick={() => goToStep(0)} className="text-[11px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors shrink-0">← Back</button>
                   <button
                     onClick={() => goToStep(2)}
                     disabled={intentLoading}
@@ -488,7 +529,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* ── Steps 2 & 3: Stripe (keep Elements mounted across both) ── */}
+            {/* Steps 2 & 3 */}
             {(step === 2 || step === 3) && clientSecret && (
               <Elements
                 stripe={stripePromise}
@@ -515,7 +556,6 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* ── Right: persistent order summary ── */}
           <OrderSummary />
         </div>
       </div>

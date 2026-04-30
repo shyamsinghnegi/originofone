@@ -13,6 +13,7 @@ export function Nav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
   const isHome = pathname === '/'
+  const isAuthPage = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up')
 
   const [isPastHero, setIsPastHero] = useState(false)
 
@@ -44,6 +45,18 @@ export function Nav() {
     ? (user.firstName?.[0] ?? '') + (user.lastName?.[0] ?? '')
     : ''
 
+  if (isAuthPage) {
+    return (
+      <nav className="fixed top-0 left-0 right-0 z-[100] bg-white border-b border-neutral-200" style={{ height: 'var(--nav-height, 60px)' }}>
+        <div className="flex items-center justify-center h-full">
+          <Link href="/" className="font-serif text-sm tracking-[0.30em] uppercase text-black hover:text-neutral-500 transition-colors">
+            ORIGIN OF ONE
+          </Link>
+        </div>
+      </nav>
+    )
+  }
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-[100] transition-colors duration-300 border-b ${navClasses}`}
@@ -54,7 +67,7 @@ export function Nav() {
         {/* Left nav links */}
         <div className="hidden md:flex items-center gap-8">
           <Link href="/collection" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>Collections</Link>
-          <Link href="/collection" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>New In</Link>
+          <Link href="/new-in" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>New In</Link>
           <Link href="/about" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>About</Link>
         </div>
 
@@ -138,7 +151,7 @@ export function Nav() {
       <div className={`md:hidden bg-white border-t border-neutral-200 overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-72' : 'max-h-0'}`}>
         <div className="flex flex-col px-6 py-5 gap-5">
           <Link href="/collection" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Collections</Link>
-          <Link href="/collection" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>New In</Link>
+          <Link href="/new-in" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>New In</Link>
           <Link href="/about" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>About</Link>
           {user ? (
             <>

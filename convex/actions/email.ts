@@ -1,7 +1,8 @@
+"use node";
 import { Resend } from "resend";
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY!);
@@ -10,12 +11,12 @@ function getResend() {
 export const sendOrderConfirmation = internalAction({
   args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
-    const order = await ctx.runQuery(internal.orders.getById, {
+    const order = await ctx.runQuery(api.orders.getById, {
       id: args.orderId,
     });
     if (!order) return;
 
-    const user = await ctx.runQuery(internal.users.getByClerkId, {
+    const user = await ctx.runQuery(api.users.getByClerkId, {
       clerkId: order.userId as any,
     });
     if (!user) return;
