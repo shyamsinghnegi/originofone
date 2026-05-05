@@ -37,3 +37,4 @@ tsconfig.tsbuildinfo
 # logs
 *.log
 npm-debug.log*
+convex/seed.ts
