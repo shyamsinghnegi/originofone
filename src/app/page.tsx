@@ -1,12 +1,6 @@
 import Link from 'next/link'
-import { ProductCard, MarqueeStrip, Footer } from '@/components/ui'
-
-const PRODUCTS = [
-  { id: 'tundra-wool-overcoat', name: 'Tundra Wool Overcoat',  price: 348, badge: 'New',        colors: ['#1a1a1a','#525252','#d4d4d4'], bg: '#e5e5e5' },
-  { id: 'nordic-puffer-jacket', name: 'Nordic Puffer Jacket',  price: 278, badge: 'Bestseller', colors: ['#0a0a0a','#737373'],           bg: '#d4d4d4' },
-  { id: 'merino-knit-sweater',  name: 'Merino Knit Sweater',   price: 168,                      colors: ['#d4d4d4','#525252','#0a0a0a'], bg: '#ebebeb' },
-  { id: 'alpine-down-vest',     name: 'Alpine Down Vest',      price: 148, originalPrice: 198,  badge: 'Sale',                          bg: '#e0e0e0' },
-]
+import { MarqueeStrip, Footer } from '@/components/ui'
+import { HomeNewArrivals } from '@/components/HomeNewArrivals'
 
 const CATEGORIES = [
   { num: '01', label: 'Outerwear',   count: '24 styles' },
@@ -181,9 +175,7 @@ export default function HomePage() {
             </div>
             <Link href="/collection" className="text-[10px] tracking-widest uppercase text-neutral-500 hover:text-black transition-colors link-underline">View All →</Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {PRODUCTS.map(p => <ProductCard key={p.id} {...p} />)}
-          </div>
+          <HomeNewArrivals />
         </section>
 
         <section className="grid md:grid-cols-2 border-t border-neutral-200">

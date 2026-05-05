@@ -28,37 +28,41 @@ export default function CartPage() {
             ) : (
               <div className="space-y-8">
                 {items.map(item => (
-                  <div key={`${item.id}-${item.size}`} className="grid grid-cols-[96px_1fr_auto] gap-5 pb-8 border-b border-border items-start">
-                    <Link href={`/product/${item.id}`} className="block">
-                      <div className="w-24 h-28 bg-gray-100 flex items-end justify-center pb-2">
-                        <div className="relative" style={{ width: 44, height: 80 }}>
-                          <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full w-5 h-5" style={{ background: 'rgba(0,0,0,0.15)' }} />
-                          <div className="w-full h-full rounded-t-full" style={{ background: 'rgba(0,0,0,0.18)' }} />
-                        </div>
+                  <div key={`${item.productId}-${item.color}-${item.size}`} className="grid grid-cols-[96px_1fr_auto] gap-5 pb-8 border-b border-border items-start">
+                    <Link href={`/product/${item.slug}`} className="block">
+                      <div className="w-24 h-28 bg-gray-100 flex items-end justify-center pb-2 overflow-hidden">
+                        {item.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="relative" style={{ width: 44, height: 80 }}>
+                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full w-5 h-5" style={{ background: 'rgba(0,0,0,0.15)' }} />
+                            <div className="w-full h-full rounded-t-full" style={{ background: 'rgba(0,0,0,0.18)' }} />
+                          </div>
+                        )}
                       </div>
                     </Link>
                     <div>
                       <p className="text-[10px] tracking-widest uppercase text-muted mb-1">Origin of One</p>
-                      <Link href={`/product/${item.id}`}>
+                      <Link href={`/product/${item.slug}`}>
                         <p className="font-serif text-xl mb-1 hover:text-muted transition-colors">{item.name}</p>
                       </Link>
                       <p className="text-[12px] text-muted mb-4">{item.color} · {item.size}</p>
                       <div className="flex gap-0">
-                        <button onClick={() => updateQty(item.id, item.size, item.qty - 1)} className="w-8 h-8 border border-border text-muted hover:border-ink hover:text-ink transition-colors flex items-center justify-center">−</button>
+                        <button onClick={() => updateQty(item.productId, item.color, item.size, item.qty - 1)} className="w-8 h-8 border border-border text-muted hover:border-ink hover:text-ink transition-colors flex items-center justify-center">−</button>
                         <div className="w-9 h-8 border-t border-b border-border flex items-center justify-center text-[12px]">{item.qty}</div>
-                        <button onClick={() => updateQty(item.id, item.size, item.qty + 1)} className="w-8 h-8 border border-border text-muted hover:border-ink hover:text-ink transition-colors flex items-center justify-center">+</button>
+                        <button onClick={() => updateQty(item.productId, item.color, item.size, item.qty + 1)} className="w-8 h-8 border border-border text-muted hover:border-ink hover:text-ink transition-colors flex items-center justify-center">+</button>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-serif text-xl mb-2">${item.price * item.qty}</p>
-                      <button onClick={() => removeItem(item.id, item.size)} className="text-[11px] text-muted underline hover:text-ink transition-colors">Remove</button>
+                      <p className="font-serif text-xl mb-2">${(item.price * item.qty).toFixed(2)}</p>
+                      <button onClick={() => removeItem(item.productId, item.color, item.size)} className="text-[11px] text-muted underline hover:text-ink transition-colors">Remove</button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Promo */}
             {items.length > 0 && (
               <div className="mt-8">
                 <p className="text-[10px] tracking-widest uppercase text-muted mb-3">Promo Code</p>
@@ -99,7 +103,6 @@ export default function CartPage() {
             <Link href="/collection" className="block w-full border border-border text-[11px] tracking-widest uppercase text-center py-3 text-muted hover:border-ink hover:text-ink transition-colors">
               Continue Shopping
             </Link>
-
             <div className="mt-6 space-y-2">
               {['🔒 Secure SSL checkout', '↩ Free 30-day returns', '📦 Ships in 2–3 business days'].map(t => (
                 <p key={t} className="text-[11px] text-muted">{t}</p>

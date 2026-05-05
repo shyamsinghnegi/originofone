@@ -128,7 +128,7 @@ export default function AccountPage() {
   return (
     <>
       <div style={{ paddingTop: 'var(--nav-height, 60px)' }} className="min-h-screen bg-white">
-        <div className="max-w-3xl mx-auto px-5 py-12">
+        <div className="max-w-6xl mx-auto px-5 py-12">
 
           {/* Header */}
           <div className="flex items-end justify-between mb-10">
@@ -140,7 +140,7 @@ export default function AccountPage() {
                   </button>
                 )}
               </p>
-              <h1 className="font-serif text-4xl text-black">
+              <h1 className="font-serif text-4xl text-black font-extrabold">
                 {view === 'dashboard' && displayName}
                 {view === 'profile' && 'My Profile'}
                 {view === 'orders' && 'Your Orders'}

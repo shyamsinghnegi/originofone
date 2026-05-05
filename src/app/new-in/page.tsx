@@ -1,28 +1,57 @@
+'use client'
+
 import Link from 'next/link'
-import { ProductCard, Footer } from '@/components/ui'
+import { useQuery } from 'convex/react'
+import { api } from '@/../convex/_generated/api'
+import { ProductCard, Footer, COLOR_MAP, COLOR_TO_BG } from '@/components/ui'
 
-const MEN = [
-  { id: 'tundra-wool-overcoat',  name: 'Tundra Wool Overcoat',  price: 348, badge: 'New',  colors: ['#1a1a1a','#525252','#d4d4d4'], bg: '#e5e5e5' },
-  { id: 'nordic-puffer-jacket',  name: 'Nordic Puffer Jacket',  price: 278, badge: 'New',  colors: ['#0a0a0a','#737373'],           bg: '#d4d4d4' },
-  { id: 'alpine-down-vest',      name: 'Alpine Down Vest',      price: 148, badge: 'New',                                           bg: '#e0e0e0' },
-  { id: 'technical-shell-jacket',name: 'Technical Shell Jacket', price: 318, badge: 'New',  colors: ['#1a1a1a','#3d3d3d'],           bg: '#dadada' },
-]
+function badgeFromTags(tags: string[]): string | undefined {
+  if (tags.includes('new') || tags.includes('new-in')) return 'New'
+  if (tags.includes('bestseller')) return 'Bestseller'
+  if (tags.includes('sale')) return 'Sale'
+  return undefined
+}
 
-const WOMEN = [
-  { id: 'merino-knit-sweater',   name: 'Merino Knit Sweater',   price: 168, badge: 'New',  colors: ['#d4d4d4','#525252','#0a0a0a'], bg: '#ebebeb' },
-  { id: 'wool-wrap-coat',        name: 'Wool Wrap Coat',        price: 398, badge: 'New',  colors: ['#1a1a1a','#7a6e6e'],           bg: '#e8e0e0' },
-  { id: 'cashmere-turtleneck',   name: 'Cashmere Turtleneck',   price: 228, badge: 'New',  colors: ['#e8e8e8','#c4b8a8'],           bg: '#ede8e2' },
-  { id: 'quilted-liner-jacket',  name: 'Quilted Liner Jacket',  price: 198, badge: 'New',  colors: ['#1a1a1a','#2d2d2d'],           bg: '#dcdcdc' },
-]
+function toCard(p: NonNullable<ReturnType<typeof useQuery<typeof api.products.list>>>[number]) {
+  const uniqueColors = [...new Set(p.variants.map(v => v.color))]
+  const firstColor = uniqueColors[0]
+  return (
+    <ProductCard
+      key={p._id}
+      id={p.slug}
+      name={p.name}
+      price={p.price}
+      originalPrice={p.compareAtPrice}
+      badge={badgeFromTags(p.tags)}
+      colors={uniqueColors.map(c => COLOR_MAP[c] ?? '#cccccc')}
+      bg={COLOR_TO_BG[firstColor] ?? '#e8e8e8'}
+      image={p.images[0]}
+    />
+  )
+}
 
-const CATEGORIES = [
-  { label: 'All', href: '/new-in' },
-  { label: 'Men', href: '/new-in#men' },
-  { label: 'Women', href: '/new-in#women' },
-  { label: 'Accessories', href: '/new-in#accessories' },
-]
+const SKELETON = [...Array(4)].map((_, i) => (
+  <div key={i} className="aspect-3/4 bg-neutral-100 animate-pulse" />
+))
 
 export default function NewInPage() {
+  const allNewIn = useQuery(api.products.list, { tag: 'new-in' })
+  const allNew   = useQuery(api.products.list, { tag: 'new' })
+
+  const newIn  = allNewIn ?? []
+  const newArr = allNew   ?? []
+
+  const men        = newIn.filter(p => p.tags.includes('men'))
+  const women      = newIn.filter(p => p.tags.includes('women'))
+  const accessories = newIn.filter(p => p.category === 'Accessories')
+
+  // If no new-in tag, fall back to 'new'-tagged products for sections
+  const menDisplay   = men.length   > 0 ? men   : newArr.filter(p => p.tags.includes('men')).slice(0, 4)
+  const womenDisplay = women.length > 0 ? women : newArr.filter(p => p.tags.includes('women')).slice(0, 4)
+  const accDisplay   = accessories.length > 0 ? accessories : []
+
+  const loading = allNewIn === undefined || allNew === undefined
+
   return (
     <>
       <div style={{ paddingTop: 'var(--nav-height, 60px)' }}>
@@ -41,7 +70,12 @@ export default function NewInPage() {
 
         {/* Category filter strip */}
         <div className="border-b border-neutral-200 px-6 md:px-10 flex gap-6 overflow-x-auto">
-          {CATEGORIES.map(cat => (
+          {[
+            { label: 'All',         href: '/new-in' },
+            { label: 'Men',         href: '/new-in#men' },
+            { label: 'Women',       href: '/new-in#women' },
+            { label: 'Accessories', href: '/new-in#accessories' },
+          ].map(cat => (
             <Link
               key={cat.label}
               href={cat.href}
@@ -52,39 +86,43 @@ export default function NewInPage() {
           ))}
         </div>
 
-        {/* Men section */}
-        <section id="men" className="px-6 md:px-10 py-16 border-b border-neutral-200">
-          <div className="flex items-baseline justify-between mb-10">
-            <div>
-              <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-2">New Arrivals</p>
-              <h2 className="font-serif text-3xl md:text-4xl text-black">Men</h2>
+        {/* Men */}
+        {(loading || menDisplay.length > 0) && (
+          <section id="men" className="px-6 md:px-10 py-16 border-b border-neutral-200">
+            <div className="flex items-baseline justify-between mb-10">
+              <div>
+                <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-2">New Arrivals</p>
+                <h2 className="font-serif text-3xl md:text-4xl text-black">Men</h2>
+              </div>
+              <Link href="/collection" className="text-[10px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors">
+                View All Men →
+              </Link>
             </div>
-            <Link href="/collection" className="text-[10px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors">
-              View All Men →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {MEN.map(p => <ProductCard key={p.id} {...p} />)}
-          </div>
-        </section>
-
-        {/* Women section */}
-        <section id="women" className="px-6 md:px-10 py-16 border-b border-neutral-200">
-          <div className="flex items-baseline justify-between mb-10">
-            <div>
-              <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-2">New Arrivals</p>
-              <h2 className="font-serif text-3xl md:text-4xl text-black">Women</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {loading ? SKELETON : menDisplay.map(toCard)}
             </div>
-            <Link href="/collection" className="text-[10px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors">
-              View All Women →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {WOMEN.map(p => <ProductCard key={p.id} {...p} />)}
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* Accessories placeholder */}
+        {/* Women */}
+        {(loading || womenDisplay.length > 0) && (
+          <section id="women" className="px-6 md:px-10 py-16 border-b border-neutral-200">
+            <div className="flex items-baseline justify-between mb-10">
+              <div>
+                <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-2">New Arrivals</p>
+                <h2 className="font-serif text-3xl md:text-4xl text-black">Women</h2>
+              </div>
+              <Link href="/collection" className="text-[10px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors">
+                View All Women →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {loading ? SKELETON : womenDisplay.map(toCard)}
+            </div>
+          </section>
+        )}
+
+        {/* Accessories */}
         <section id="accessories" className="px-6 md:px-10 py-16">
           <div className="flex items-baseline justify-between mb-10">
             <div>
@@ -92,12 +130,20 @@ export default function NewInPage() {
               <h2 className="font-serif text-3xl md:text-4xl text-black">Accessories</h2>
             </div>
           </div>
-          <div className="border border-dashed border-neutral-200 py-20 text-center">
-            <p className="text-[13px] text-neutral-400 mb-4">New accessories dropping soon.</p>
-            <Link href="/collection" className="text-[10px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors">
-              Browse All →
-            </Link>
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">{SKELETON}</div>
+          ) : accDisplay.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {accDisplay.map(toCard)}
+            </div>
+          ) : (
+            <div className="border border-dashed border-neutral-200 py-20 text-center">
+              <p className="text-[13px] text-neutral-400 mb-4">New accessories dropping soon.</p>
+              <Link href="/collection" className="text-[10px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors">
+                Browse All →
+              </Link>
+            </div>
+          )}
         </section>
       </div>
       <Footer />

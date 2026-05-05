@@ -113,7 +113,7 @@ function StripeSteps({
         </div>
         <div className="px-5 py-4 space-y-2.5">
           {items.map(item => (
-            <div key={`${item.id}-${item.size}`} className="flex justify-between text-[13px]">
+            <div key={`${item.productId}-${item.color}-${item.size}`} className="flex justify-between text-[13px]">
               <span className="text-neutral-500">{item.name} <span className="text-neutral-400">× {item.qty}</span></span>
               <span className="text-black">${(item.price * item.qty).toFixed(2)}</span>
             </div>
@@ -311,8 +311,8 @@ export default function CheckoutPage() {
       <h2 className="font-serif text-2xl mb-6 text-black">Order Summary</h2>
       <div className="space-y-4 mb-6">
         {items.map(item => (
-          <div key={`${item.id}-${item.size}`} className="flex gap-3 items-center">
-            <div className="w-16 h-20 bg-neutral-200 flex-shrink-0 flex items-end justify-center pb-1.5 relative">
+          <div key={`${item.productId}-${item.color}-${item.size}`} className="flex gap-3 items-center">
+            <div className="w-16 h-20 bg-neutral-200 shrink-0 flex items-end justify-center pb-1.5 relative">
               <div className="w-7 h-12 bg-neutral-400 rounded-t-full" />
               {item.qty > 1 && (
                 <span className="absolute -top-2 -right-2 bg-black text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center">
@@ -393,20 +393,25 @@ export default function CheckoutPage() {
                 ) : (
                   <div className="space-y-6 mb-8">
                     {items.map(item => (
-                      <div key={`${item.id}-${item.size}`} className="flex gap-4 items-center">
-                        <div className="w-16 h-20 bg-neutral-200 flex-shrink-0 flex items-end justify-center pb-1">
-                          <div className="w-7 h-12 bg-neutral-400 rounded-t-full" />
+                      <div key={`${item.productId}-${item.color}-${item.size}`} className="flex gap-4 items-center">
+                        <div className="w-16 h-20 bg-neutral-200 shrink-0 flex items-end justify-center pb-1 overflow-hidden">
+                          {item.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-7 h-12 bg-neutral-400 rounded-t-full" />
+                          )}
                         </div>
                         <div className="flex-1">
                           <p className="text-[13px] text-black mb-0.5">{item.name}</p>
                           <p className="text-[11px] text-neutral-400 mb-2.5">{item.color} · {item.size}</p>
                           <div className="flex items-center gap-3">
                             <div className="flex items-center border border-neutral-200">
-                              <button onClick={() => updateQty(item.id, item.size, item.qty - 1)} className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-black transition-colors">−</button>
+                              <button onClick={() => updateQty(item.productId, item.color, item.size, item.qty - 1)} className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-black transition-colors">−</button>
                               <span className="w-8 h-7 border-x border-neutral-200 flex items-center justify-center text-[12px]">{item.qty}</span>
-                              <button onClick={() => updateQty(item.id, item.size, item.qty + 1)} className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-black transition-colors">+</button>
+                              <button onClick={() => updateQty(item.productId, item.color, item.size, item.qty + 1)} className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-black transition-colors">+</button>
                             </div>
-                            <button onClick={() => removeItem(item.id, item.size)} className="text-[11px] text-neutral-400 hover:text-black transition-colors underline">Remove</button>
+                            <button onClick={() => removeItem(item.productId, item.color, item.size)} className="text-[11px] text-neutral-400 hover:text-black transition-colors underline">Remove</button>
                           </div>
                         </div>
                         <p className="text-[13px] text-black shrink-0">${(item.price * item.qty).toFixed(2)}</p>

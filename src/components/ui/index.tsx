@@ -49,10 +49,46 @@ export function MarqueeStrip({ items }: { items: string[] }) {
   )
 }
 
-// ── Product card ─────────────────────────────────────────
-// Each "image" is a placeholder slide. On hover, left/right arrows appear
-// to cycle between them. The background colour shifts per slide for variety.
+// ── Colour helpers (exported for pages) ─────────────────
+export const COLOR_MAP: Record<string, string> = {
+  'Black': '#0a0a0a',
+  'Charcoal': '#3d3d3d',
+  'Stone Grey': '#8a8278',
+  'Light Grey': '#d4d4d4',
+  'Dark Grey': '#525252',
+  'Camel': '#c8b89a',
+  'White': '#f5f5f4',
+  'Cream': '#f0ebe3',
+  'Ivory': '#ede8df',
+  'Navy': '#1a2745',
+  'Forest': '#2d4a3e',
+  'Burgundy': '#6b2737',
+  'Taupe': '#b5a898',
+  'Sand': '#d4c4a8',
+  'Smoke': '#737373',
+  'Tan': '#c4a882',
+}
 
+export const COLOR_TO_BG: Record<string, string> = {
+  'Black': '#d4d4d4',
+  'Charcoal': '#cccccc',
+  'Stone Grey': '#e5e5e5',
+  'Light Grey': '#ebebeb',
+  'Dark Grey': '#d8d8d8',
+  'Camel': '#e8e0d8',
+  'White': '#f5f5f5',
+  'Cream': '#ede8e2',
+  'Ivory': '#f0ece6',
+  'Navy': '#d0d4dc',
+  'Forest': '#d4dcd8',
+  'Burgundy': '#dcd0d0',
+  'Taupe': '#e4deda',
+  'Sand': '#e8e0d4',
+  'Smoke': '#dcdcdc',
+  'Tan': '#e4d8cc',
+}
+
+// ── Product card ─────────────────────────────────────────
 interface ProductCardProps {
   id: string
   name: string
@@ -60,11 +96,9 @@ interface ProductCardProps {
   originalPrice?: number
   badge?: string
   colors?: string[]
-  // bg is now the BASE colour for slide 0; subsequent slides use
-  // slightly lighter/darker variants automatically
   bg?: string
-  // Optional array of per-slide background colours (overrides auto)
   slides?: string[]
+  image?: string
 }
 
 // Placeholder figure rendered inside each slide
@@ -80,13 +114,12 @@ function PlaceholderFigure({ tint }: { tint: string }) {
   )
 }
 
-export function ProductCard({ id, name, price, originalPrice, badge, colors, bg = '#e8e8e8', slides }: ProductCardProps) {
+export function ProductCard({ id, name, price, originalPrice, badge, colors, bg = '#e8e8e8', slides, image }: ProductCardProps) {
   const [imgIndex, setImgIndex] = useState(0)
   const [hovered,  setHovered]  = useState(false)
 
-  // Build slide bg list — use provided or generate 3 variants from base
   const slideBgs: string[] = slides ?? [bg, lighten(bg, 12), darken(bg, 10)]
-  const total = slideBgs.length
+  const total = image ? 1 : slideBgs.length
 
   const prev = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -105,12 +138,16 @@ export function ProductCard({ id, name, price, originalPrice, badge, colors, bg 
       {/* ── Card image area ── */}
       <div
         className="aspect-[3/4] relative overflow-hidden mb-3 transition-colors duration-500"
-        style={{ background: currentBg }}
+        style={{ background: image ? '#f5f5f5' : currentBg }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        {/* Placeholder figure */}
-        <PlaceholderFigure tint={figureTint} />
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt={name} className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <PlaceholderFigure tint={figureTint} />
+        )}
 
         {/* Badge */}
         {badge && (
@@ -188,7 +225,7 @@ export function ProductCard({ id, name, price, originalPrice, badge, colors, bg 
   )
 }
 
-// ── Colour helpers ───────────────────────────────────────
+// ── Colour helpers (internal) ────────────────────────────
 function hexToRgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '')
   const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16)
