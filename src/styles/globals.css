@@ -33,18 +33,13 @@
   box-sizing: border-box;
 }
 
-html { 
-  scroll-behavior: smooth; 
-  
+html {
+  scroll-behavior: smooth;
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
   touch-action: pan-x pan-y;
 }
 
-html.lenis { height: auto; }
-.lenis.lenis-smooth { scroll-behavior: auto; }
-.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
-.lenis.lenis-stopped { overflow: hidden; }
 
 body {
   background: var(--paper);
@@ -69,6 +64,7 @@ body {
   animation: marquee 28s linear infinite;
   display: inline-flex;
   white-space: nowrap;
+  will-change: transform;
 }
 
 /* ── Page fade ── */

@@ -3,14 +3,10 @@ import { useEffect } from 'react'
 
 export function ZoomLock() {
   useEffect(() => {
-    // 1. Prevent Trackpad Pinch-to-Zoom on Mac & Ctrl+Scroll on Windows
     const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault()
-      }
+      if (e.ctrlKey || e.metaKey) e.preventDefault()
     }
 
-    // 2. Prevent Keyboard Zoom Shortcuts (Cmd/Ctrl + / - / 0)
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         (e.ctrlKey || e.metaKey) &&
@@ -20,7 +16,8 @@ export function ZoomLock() {
       }
     }
 
-    // Note: { passive: false } is required to allow preventDefault() on wheel events
+    // passive:false only on wheel (needed to preventDefault on ctrl+wheel).
+    // Regular scroll goes through Lenis unblocked.
     document.addEventListener('wheel', handleWheel, { passive: false })
     document.addEventListener('keydown', handleKeyDown)
 

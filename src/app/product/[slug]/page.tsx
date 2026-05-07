@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, use } from 'react'
 import Link from 'next/link'
 import { useQuery } from 'convex/react'
 import { api } from '@/../convex/_generated/api'
@@ -22,11 +22,15 @@ function badgeFromTags(tags: string[]): string | undefined {
   return undefined
 }
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
+export default function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params)
   const { addItem, openCart } = useCart()
 
-  const product = useQuery(api.products.getBySlug, { slug: params.slug })
-  const allProducts = useQuery(api.products.list, {})
+  const product = useQuery(api.products.getBySlug, { slug })
+  const related = useQuery(
+    api.products.getRelated,
+    product ? { category: product.category, excludeSlug: product.slug } : 'skip'
+  )
 
   const [selectedColor, setSelectedColor] = useState('')
   const [selectedSize, setSelectedSize] = useState('')
@@ -35,13 +39,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const [openAccordion, setOpenAccordion] = useState<number | null>(0)
   const [added, setAdded] = useState(false)
 
-  // Derive unique colors from variants
   const uniqueColors = useMemo(() => {
     if (!product) return []
     return [...new Set(product.variants.map(v => v.color))]
   }, [product])
 
-  // Derive unique sizes for selected color (or all if no color selected)
   const availableSizes = useMemo(() => {
     if (!product) return []
     const colorVariants = selectedColor
@@ -50,7 +52,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     return [...new Set(colorVariants.map(v => v.size))]
   }, [product, selectedColor])
 
-  // Which sizes are sold out for the selected color
   const soldOutSizes = useMemo(() => {
     if (!product) return new Set<string>()
     const colorVariants = selectedColor
@@ -58,14 +59,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       : product.variants
     return new Set(colorVariants.filter(v => v.stock === 0).map(v => v.size))
   }, [product, selectedColor])
-
-  // Related products (same category, excluding self)
-  const related = useMemo(() => {
-    if (!product || !allProducts) return []
-    return allProducts
-      .filter(p => p.category === product.category && p.slug !== product.slug)
-      .slice(0, 4)
-  }, [product, allProducts])
 
   // Init selections when product loads
   const effectiveColor = selectedColor || uniqueColors[0] || ''
@@ -285,14 +278,14 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         </div>
 
         {/* Related */}
-        {related.length > 0 && (
+        {related && related.length > 0 && (
           <section className="px-6 md:px-10 py-16 border-t border-border">
             <div className="flex justify-between items-baseline mb-8">
               <h2 className="font-serif text-3xl md:text-4xl">You May Also Like</h2>
               <Link href="/collection" className="text-[10px] tracking-widest uppercase text-muted hover:text-ink transition-colors link-underline">View All →</Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {related.map(p => {
+              {(related ?? []).map(p => {
                 const colors = [...new Set(p.variants.map(v => v.color))]
                 const firstC = colors[0]
                 return (

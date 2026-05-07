@@ -60,7 +60,11 @@ export default defineSchema({
   })
     .index("by_slug", ["slug"])
     .index("by_category", ["category"])
-    .index("by_active", ["isActive"]),
+    .index("by_active", ["isActive"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["isActive"],
+    }),
 
   orders: defineTable({
     userId: v.id("users"),

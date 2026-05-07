@@ -50,6 +50,53 @@ export const getBySlug = query({
   },
 });
 
+export const search = query({
+  args: { query: v.string() },
+  handler: async (ctx, args) => {
+    const q = args.query.trim();
+    if (!q || q.length < 2) return [];
+
+    // Full-text search on name (relevance-ranked)
+    const byName = await ctx.db
+      .query("products")
+      .withSearchIndex("search_name", (sq) =>
+        sq.search("name", q).eq("isActive", true)
+      )
+      .take(20);
+
+    // Also match category / tag / description for broader results
+    const seen = new Set(byName.map((p) => p._id));
+    const ql = q.toLowerCase();
+    const rest = await ctx.db
+      .query("products")
+      .withIndex("by_active", (sq) => sq.eq("isActive", true))
+      .collect();
+
+    const additional = rest.filter(
+      (p) =>
+        !seen.has(p._id) &&
+        (p.category.toLowerCase().includes(ql) ||
+          p.tags.some((t) => t.toLowerCase().includes(ql)) ||
+          p.description.toLowerCase().includes(ql))
+    );
+
+    return [...byName, ...additional].slice(0, 20);
+  },
+});
+
+export const getRelated = query({
+  args: { category: v.string(), excludeSlug: v.string() },
+  handler: async (ctx, args) => {
+    const products = await ctx.db
+      .query("products")
+      .withIndex("by_active", (q) => q.eq("isActive", true))
+      .collect();
+    return products
+      .filter((p) => p.category === args.category && p.slug !== args.excludeSlug)
+      .slice(0, 4);
+  },
+});
+
 export const getById = query({
   args: { id: v.id("products") },
   handler: async (ctx, args) => {

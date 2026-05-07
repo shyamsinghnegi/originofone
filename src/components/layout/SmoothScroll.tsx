@@ -1,7 +1,4 @@
-'use client'
-import { useLenis } from '@/lib/useLenis'
-
+// Smooth scroll handled via CSS scroll-behavior in globals.css
 export function SmoothScroll() {
-  useLenis()
   return null
 }

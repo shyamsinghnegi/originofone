@@ -5,12 +5,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useCart } from '@/lib/cartContext'
+import { SearchOverlay } from '@/components/layout/SearchOverlay'
 
 export function Nav() {
   const { count, openCart } = useCart()
   const { user, isLoaded } = useUser()
   const { signOut } = useClerk()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const pathname = usePathname()
   const isHome = pathname === '/'
   const isAuthPage = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up')
@@ -32,6 +34,9 @@ export function Nav() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [isHome])
 
+  // Close search on route change
+  useEffect(() => { setSearchOpen(false) }, [pathname])
+
   const isTransparent = isHome && !isPastHero && !menuOpen
   const showLogo = !isHome || isPastHero
 
@@ -47,7 +52,7 @@ export function Nav() {
 
   if (isAuthPage) {
     return (
-      <nav className="fixed top-0 left-0 right-0 z-[100] bg-white border-b border-neutral-200" style={{ height: 'var(--nav-height, 60px)' }}>
+      <nav className="fixed top-0 left-0 right-0 z-[100] bg-white border-b border-neutral-200" style={{ height: 'var(--nav-height, 60px)' }} aria-label="Site navigation">
         <div className="flex items-center justify-center h-full">
           <Link href="/" className="font-serif text-sm tracking-[0.30em] uppercase text-black hover:text-neutral-500 transition-colors">
             ORIGIN OF ONE
@@ -58,9 +63,11 @@ export function Nav() {
   }
 
   return (
+    <>
     <nav
       className={`fixed top-0 left-0 right-0 z-[100] transition-colors duration-300 border-b ${navClasses}`}
       style={{ height: 'var(--nav-height, 60px)' }}
+      aria-label="Site navigation"
     >
       <div className="flex items-center justify-between h-full px-6 md:px-10">
 
@@ -100,7 +107,7 @@ export function Nav() {
 
         {/* Right icons */}
         <div className="flex items-center gap-5">
-          <button aria-label="Search" className={`transition-colors ${iconClasses}`}>
+          <button aria-label="Search" onClick={() => setSearchOpen(true)} className={`transition-colors ${iconClasses}`}>
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -109,7 +116,7 @@ export function Nav() {
           {/* Account — shows initials bubble if signed in, otherwise icon */}
           {isLoaded && (
             user ? (
-              <Link href="/account" className={`hidden md:flex items-center justify-center transition-colors ${iconClasses}`} aria-label="Account">
+              <Link href="/account" className={`hidden md:flex items-center justify-center transition-colors ${iconClasses}`} aria-label={initials ? `Account (${initials})` : 'Account'}>
                 {initials ? (
                   <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium border ${isTransparent ? 'border-white/60 text-white' : 'border-neutral-300 text-neutral-600'}`}>
                     {initials.toUpperCase()}
@@ -169,5 +176,7 @@ export function Nav() {
         </div>
       </div>
     </nav>
+    <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+    </>
   )
 }

@@ -257,19 +257,19 @@ export function Footer() {
           </p>
         </div>
         <div>
-          <h4 className="text-[10px] tracking-widest uppercase text-neutral-400 mb-4">Shop</h4>
+          <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Shop</p>
           {['New Arrivals', 'Outerwear', 'Knitwear', 'Accessories', 'Sale'].map(l => (
             <a key={l} href="/collection" className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{l}</a>
           ))}
         </div>
         <div>
-          <h4 className="text-[10px] tracking-widest uppercase text-neutral-400 mb-4">Help</h4>
+          <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Help</p>
           {['Sizing Guide', 'Shipping Info', 'Returns', 'FAQ', 'Contact'].map(l => (
             <a key={l} href="#" className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{l}</a>
           ))}
         </div>
         <div>
-          <h4 className="text-[10px] tracking-widest uppercase text-neutral-400 mb-4">Company</h4>
+          <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Company</p>
           {['Our Story', 'Sustainability', 'Careers', 'Press'].map(l => (
             <a key={l} href="/about" className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{l}</a>
           ))}

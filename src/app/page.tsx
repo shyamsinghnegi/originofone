@@ -11,19 +11,26 @@ const CATEGORIES = [
 
 const HERO_SLIDES = [
   { bg: '#0a0a0a', eyebrow: 'Est. Canada · Winter 2025',  label: 'SHOP COLLECTION', href: '/collection', figure: 'rgba(255,255,255,0.07)' },
-  { bg: '#111111', eyebrow: 'New Arrivals · Just Landed', label: 'NEW IN',           href: '/new-in', figure: 'rgba(255,255,255,0.06)' },
-  { 
-    isSplit: true, 
+  { bg: '#111111', eyebrow: 'New Arrivals · Just Landed', label: 'NEW IN',           href: '/new-in',     figure: 'rgba(255,255,255,0.06)' },
+  {
+    isSplit: true,
     left:  { bg: '#1a1a1a', eyebrow: 'Womenswear', label: 'SHOP WOMEN', href: '/collection', figure: 'rgba(255,255,255,0.08)' },
-    right: { bg: '#222222', eyebrow: 'Menswear',   label: 'SHOP MEN',   href: '/collection', figure: 'rgba(255,255,255,0.05)' }
+    right: { bg: '#222222', eyebrow: 'Menswear',   label: 'SHOP MEN',   href: '/collection', figure: 'rgba(255,255,255,0.05)' },
   },
 ]
 
 const NAV_H  = 60
 const SLIDES = HERO_SLIDES.length
 
-// Helper component to render the inside of a slide
-function SlideInner({ content, index, total, isFirst, isRightSplit }: any) {
+type SlideContent = { bg?: string; eyebrow: string; label: string; href: string; figure: string }
+
+function SlideInner({ content, index, total, isFirst, isRightSplit }: {
+  content: SlideContent
+  index?: number
+  total?: number
+  isFirst?: boolean
+  isRightSplit?: boolean
+}) {
   return (
     <>
       {/* Grid texture */}
@@ -43,26 +50,22 @@ function SlideInner({ content, index, total, isFirst, isRightSplit }: any) {
         </div>
       </div>
 
-      {/* Eyebrow - pushed down slightly (16 + NAV_H) so it's not hidden behind the transparent nav */}
       <p style={{ position: 'absolute', top: 16 + NAV_H, left: 24, fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', zIndex: 2 }}>
         {content.eyebrow}
       </p>
 
-      {/* CTA */}
       <div style={{ position: 'absolute', bottom: 40, right: 24, zIndex: 2 }}>
         <Link href={content.href} style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 2 }}>
           {content.label} →
         </Link>
       </div>
 
-      {/* Counter (Skip on the right half of the split screen) */}
       {!isRightSplit && index !== undefined && (
         <p style={{ position: 'absolute', bottom: 40, left: 24, fontSize: 9, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', zIndex: 2 }}>
           {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
         </p>
       )}
 
-      {/* Scroll hint */}
       {isFirst && (
         <div style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, zIndex: 2 }}>
           <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.2)' }} />
@@ -76,20 +79,14 @@ function SlideInner({ content, index, total, isFirst, isRightSplit }: any) {
 export default function HomePage() {
   return (
     <>
-      {/* REMOVED: The <div style={{ height: NAV_H }} /> spacer has been removed. 
-        The hero grid now starts flush at the very top of the screen, creating 
-        a true full-bleed effect behind the transparent navbar.
-      */}
-
       <div id="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', position: 'relative', zIndex: 10 }}>
 
-        {/* ── TRACK 1: SLIDES ─────────────────────────────────── */}
-        {/* Slides are strictly 110vh tall for the overscroll editorial effect */}
+        {/* Slides */}
         <div style={{ gridColumn: 1, gridRow: 1, zIndex: 10 }}>
           {HERO_SLIDES.map((slide: any, i) => {
             if (slide.isSplit) {
               return (
-                <div key={i} className="flex flex-col md:flex-row" style={{ height: '110vh', zIndex: 10 }}>
+                <div key={i} className="flex flex-col md:flex-row" style={{ height: '100vh' }}>
                   <div className="relative flex-1 h-full border-b md:border-b-0 md:border-r border-white/10" style={{ background: slide.left.bg }}>
                     <SlideInner content={slide.left} index={i} total={SLIDES} />
                   </div>
@@ -100,41 +97,27 @@ export default function HomePage() {
               )
             }
             return (
-              <div key={i} className="relative" style={{ height: '110vh', background: slide.bg, zIndex: 10 }}>
+              <div key={i} className="relative" style={{ height: '100vh', background: slide.bg }}>
                 <SlideInner content={slide} index={i} total={SLIDES} isFirst={i === 0} />
               </div>
             )
           })}
         </div>
 
-        {/* ── TRACK 2: STICKY LOGO ────────────────────────────── */}
-        {/*
-          Starts CENTRED. Travels to ~85% (green line) during
-          last 50% of slide 3 (275vh→330vh of scroll).
-          TUNE: change `to { top: 85% }` to move end position.
-        */}
+        {/* Sticky centred logo */}
         <div style={{ gridColumn: 1, gridRow: 1, zIndex: 20, pointerEvents: 'none' }}>
-          <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'visible' }}>
+          <div style={{ position: 'sticky', top: 0, height: '100vh' }}>
             <h1
-              id="hero-logo"
               className="font-serif text-white text-center leading-[0.88] tracking-tight select-none mix-blend-difference"
               style={{
                 position: 'absolute',
-                left: 0,
-                right: 0,
-                top: "85%",
+                left: 0, right: 0,
+                top: '50%',
                 transform: 'translateY(-50%)',
                 fontSize: 'clamp(2.5rem, 8vw, 8rem)',
                 whiteSpace: 'nowrap',
                 padding: '0 1rem',
-                animationName: 'hero-logo-travel',
-                animationDuration: '1s',
-                animationTimingFunction: 'ease-in',
-                animationFillMode: 'both',
-                animationTimeline: 'scroll(root)',
-                animationRangeStart: '275vh',
-                animationRangeEnd: '330vh',
-              } as React.CSSProperties}
+              }}
             >
               ORIGIN OF ONE
             </h1>
@@ -142,24 +125,14 @@ export default function HomePage() {
         </div>
       </div>
 
-      <style>{`
-        @keyframes hero-logo-travel {
-          from { top: 50%; transform: translateY(-50%); }
-          to   { top: 85%; transform: translateY(-50%); }
-        }
-        @supports not (animation-timeline: scroll()) {
-          #hero-logo { top: 50% !important; animation: none !important; }
-        }
-      `}</style>
-
-      {/* ── REST OF PAGE (THE CURTAIN) ───────────────────────────── */}
+      {/* Rest of page */}
       <div className="relative z-30 bg-paper">
         <MarqueeStrip items={['Free Returns','·','Ethically Sourced','·','Ships Across Canada','·','Premium Materials','·','Winter Ready','·','Made to Last']} />
 
         <section className="grid grid-cols-2 md:grid-cols-4 border-b border-neutral-200">
           {CATEGORIES.map((cat, i) => (
             <Link key={cat.label} href="/collection" className={`group px-6 md:px-8 py-10 hover:bg-neutral-50 transition-colors duration-200 relative ${i < 3 ? 'border-r border-neutral-200' : ''}`}>
-              <p className="font-serif text-5xl text-neutral-200 leading-none mb-4 group-hover:text-neutral-300 transition-colors">{cat.num}</p>
+              <p className="font-serif text-5xl text-neutral-400 leading-none mb-4 group-hover:text-neutral-500 transition-colors">{cat.num}</p>
               <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-1">{cat.label}</p>
               <p className="text-[12px] text-neutral-400">{cat.count}</p>
               <span className="absolute bottom-6 right-6 text-neutral-400 group-hover:text-black group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-200 text-sm">↗</span>
@@ -220,4 +193,4 @@ export default function HomePage() {
       </div>
     </>
   )
-} 
+}
