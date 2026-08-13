@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 // Static security headers applied to all routes (including _next/static/*).
-// CSP is intentionally omitted here — it's set per-request in middleware.ts
+// CSP is intentionally omitted here — it's set per-request in proxy.ts
 // with a cryptographic nonce so 'unsafe-inline' is not needed for scripts.
 const staticSecurityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },

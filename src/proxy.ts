@@ -11,20 +11,29 @@ const isProtectedRoute = createRouteMatcher([
 const isDev = process.env.NODE_ENV === "development";
 
 function buildCsp(nonce: string): string {
+  // Scripts: nonce covers our own inline scripts; the explicit host allowlist
+  // covers third-party SDKs that inject their own <script> tags (Clerk, Stripe,
+  // Cloudflare Turnstile). 'strict-dynamic' is intentionally NOT used: Clerk's
+  // App Router integration loads clerk.browser.js as a browser-parsed script
+  // without the middleware nonce, and 'strict-dynamic' disables the host
+  // allowlist, which would block it. 'unsafe-eval' is dev-only (React debugging).
+  const scriptSrc =
+    `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ""} ` +
+    "https://*.clerk.accounts.dev https://js.stripe.com https://challenges.cloudflare.com";
+
   return [
     "default-src 'self'",
-    // 'strict-dynamic' propagates nonce trust to dynamically loaded scripts
-    // (Clerk, Stripe, and Convex all inject scripts via JS, so they inherit trust)
-    // Host allowlist kept as fallback for browsers that don't support strict-dynamic
-    // 'unsafe-eval' is only included in dev: React uses eval() for call-stack debugging
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""} https://*.clerk.accounts.dev https://js.stripe.com`,
+    scriptSrc,
+    // Some browsers use script-src-elem for <script> element loads; mirror it
+    // explicitly so the host allowlist is honored for injected SDK scripts.
+    `script-src-elem 'self' 'nonce-${nonce}' https://*.clerk.accounts.dev https://js.stripe.com https://challenges.cloudflare.com`,
     // unsafe-inline required for style attributes (React inline styles → style="...")
     "style-src 'self' 'unsafe-inline'",
     // Fonts are self-hosted via next/font — no external font CDN needed
     "font-src 'self'",
     "img-src 'self' data: blob: https://images.unsplash.com https://plus.unsplash.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://img.clerk.com",
-    "connect-src 'self' wss://*.convex.cloud https://*.convex.cloud https://*.clerk.accounts.dev https://clerk.accounts.dev https://api.stripe.com wss://ppm.stripe.com",
-    "frame-src https://js.stripe.com https://hooks.stripe.com https://*.clerk.accounts.dev",
+    "connect-src 'self' wss://*.convex.cloud https://*.convex.cloud https://*.clerk.accounts.dev https://clerk.accounts.dev https://api.stripe.com wss://ppm.stripe.com https://challenges.cloudflare.com",
+    "frame-src https://js.stripe.com https://hooks.stripe.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
     "frame-ancestors 'none'",
     "worker-src blob: 'self'",
   ].join("; ");
