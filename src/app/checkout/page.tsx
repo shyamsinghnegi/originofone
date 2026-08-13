@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useCart } from '@/lib/cartContext'
 import { useUser } from '@clerk/nextjs'
-import { useQuery, useMutation } from 'convex/react'
+import { useQuery, useMutation, useAction } from 'convex/react'
 import { api } from '@/../convex/_generated/api'
+import { Id } from '@/../convex/_generated/dataModel'
 import { Footer } from '@/components/ui'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -36,7 +37,7 @@ const EMPTY_SHIPPING: ShippingData = {
 function FieldInput({ label, required, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; required?: boolean }) {
   return (
     <div>
-      <label className="block text-[10px] tracking-widest uppercase text-neutral-500 mb-1.5">
+      <label className="block text-[11px] tracking-widest uppercase text-neutral-500 mb-1.5">
         {label}{required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
       <input
@@ -51,17 +52,17 @@ function FieldInput({ label, required, ...props }: React.InputHTMLAttributes<HTM
 
 // ── Stripe inner component ────────────────────────────────────────────────────
 function StripeSteps({
-  step, onBack, onNextFromPayment,
+  step, onBack, onNextFromPayment, onPaid,
   shipping, shippingMethod, shippingCost, taxes, subtotal, orderTotal,
 }: {
   step: number; onBack: () => void; onNextFromPayment: () => void
+  onPaid: () => Promise<void>
   shipping: ShippingData; shippingMethod: string
   shippingCost: number; taxes: number; subtotal: number; orderTotal: number
 }) {
   const stripe = useStripe()
   const elements = useElements()
   const { items } = useCart()
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -77,14 +78,18 @@ function StripeSteps({
     if (stripeError) {
       setError(stripeError.message ?? 'Payment failed. Please try again.')
       setLoading(false)
-    } else {
-      router.push('/confirmation')
+      return
+    }
+    try {
+      await onPaid()
+    } catch (e) {
+      console.error('Post-payment order update failed:', e)
     }
   }
 
-  if (step === 2) {
-    return (
-      <div>
+  return (
+    <div>
+      <div className={step === 2 ? '' : 'hidden'}>
         <h2 className="font-serif text-2xl mb-6 text-black">Payment</h2>
         <PaymentElement />
         {error && <p className="text-red-500 text-[12px] mt-3">{error}</p>}
@@ -100,16 +105,14 @@ function StripeSteps({
           </button>
         </div>
       </div>
-    )
-  }
 
-  return (
+      {step === 3 && (
     <div>
       <h2 className="font-serif text-2xl mb-8 text-black">Review Order</h2>
 
       <div className="border border-neutral-200 mb-5">
         <div className="px-5 py-3 border-b border-neutral-200">
-          <p className="text-[10px] tracking-widest uppercase text-neutral-400">Items ({items.reduce((s, i) => s + i.qty, 0)})</p>
+          <p className="text-[11px] tracking-widest uppercase text-neutral-400">Items ({items.reduce((s, i) => s + i.qty, 0)})</p>
         </div>
         <div className="px-5 py-4 space-y-2.5">
           {items.map(item => (
@@ -123,7 +126,7 @@ function StripeSteps({
 
       <div className="border border-neutral-200 mb-5">
         <div className="px-5 py-3 border-b border-neutral-200">
-          <p className="text-[10px] tracking-widest uppercase text-neutral-400">Ship to</p>
+          <p className="text-[11px] tracking-widest uppercase text-neutral-400">Ship to</p>
         </div>
         <div className="px-5 py-4 text-[13px] text-neutral-500 leading-relaxed">
           {shipping.firstName} {shipping.lastName}{shipping.phone ? ` · ${shipping.phone}` : ''}<br />
@@ -135,7 +138,7 @@ function StripeSteps({
 
       <div className="border border-neutral-200 mb-5">
         <div className="px-5 py-3 border-b border-neutral-200">
-          <p className="text-[10px] tracking-widest uppercase text-neutral-400">Shipping</p>
+          <p className="text-[11px] tracking-widest uppercase text-neutral-400">Shipping</p>
         </div>
         <div className="px-5 py-4 text-[13px] text-neutral-500">
           {shippingMethod === 'standard' ? 'Standard (5–7 days) — Free'
@@ -146,7 +149,7 @@ function StripeSteps({
 
       <div className="border border-neutral-200 mb-8">
         <div className="px-5 py-3 border-b border-neutral-200">
-          <p className="text-[10px] tracking-widest uppercase text-neutral-400">Order Total</p>
+          <p className="text-[11px] tracking-widest uppercase text-neutral-400">Order Total</p>
         </div>
         <div className="px-5 py-4 space-y-2">
           <div className="flex justify-between text-[12px]">
@@ -181,15 +184,32 @@ function StripeSteps({
         By placing your order you agree to our Terms &amp; Privacy Policy.
       </p>
     </div>
+      )}
+    </div>
   )
 }
 
 // ── Main checkout page ────────────────────────────────────────────────────────
-export default function CheckoutPage() {
+function CheckoutInner() {
   const { items, total, updateQty, removeItem } = useCart()
   const { user } = useUser()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const resumeOrderId = searchParams.get('resume') as Id<'orders'> | null
   const convexUser = useQuery(api.users.me)
   const saveAddress = useMutation(api.users.addAddress)
+  const createOrder = useMutation(api.orders.create)
+  const deleteIfPending = useMutation(api.orders.deleteIfPending)
+  const markPaidByIntentId = useMutation(api.orders.markPaidByIntentId)
+  const createPaymentIntent = useAction(api.actions.stripe.createPaymentIntent)
+  const resumePaymentIntent = useAction(api.actions.stripe.resumePaymentIntent)
+  const resumeOrder = useQuery(
+    api.orders.getById,
+    resumeOrderId ? { id: resumeOrderId } : 'skip'
+  )
+  const myPending = useQuery(api.orders.listMyPending)
+  const [resumeError, setResumeError] = useState<string | null>(null)
+  const [resumeStarted, setResumeStarted] = useState(false)
 
   const [step, setStep] = useState(0)
   const [maxStep, setMaxStep] = useState(0)
@@ -200,10 +220,11 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'express' | 'overnight'>('standard')
 
   const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [orderId, setOrderId] = useState<Id<'orders'> | null>(null)
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
   const [intentLoading, setIntentLoading] = useState(false)
   const [intentError, setIntentError] = useState<string | null>(null)
 
-  // Autofill from Clerk user + saved Convex addresses
   useEffect(() => {
     if (!user) return
     setShipping(s => ({
@@ -231,9 +252,44 @@ export default function CheckoutPage() {
     }
   }, [convexUser])
 
+  useEffect(() => {
+    if (!resumeOrderId || resumeStarted || resumeOrder === undefined) return
+    if (resumeOrder === null) { setResumeError('Order not found.'); return }
+    if (resumeOrder.status !== 'pending') {
+      setResumeError('This order can no longer be paid.')
+      return
+    }
+    setResumeStarted(true)
+    setShipping(s => ({
+      ...s,
+      line1: resumeOrder.shippingAddress.line1,
+      line2: resumeOrder.shippingAddress.line2 ?? '',
+      city: resumeOrder.shippingAddress.city,
+      province: resumeOrder.shippingAddress.province,
+      postalCode: resumeOrder.shippingAddress.postalCode,
+      country: resumeOrder.shippingAddress.country,
+    }))
+    setShippingMethod(resumeOrder.shippingMethod as 'standard' | 'express' | 'overnight')
+    ;(async () => {
+      setIntentLoading(true)
+      try {
+        const { clientSecret: secret } = await resumePaymentIntent({ convexOrderId: resumeOrderId })
+        setOrderId(resumeOrderId)
+        setPaymentIntentId(secret.split('_secret_')[0])
+        setClientSecret(secret)
+        setStep(2)
+        setMaxStep(2)
+      } catch (err: unknown) {
+        setResumeError(err instanceof Error ? err.message : 'Could not resume payment.')
+      }
+      setIntentLoading(false)
+    })()
+  }, [resumeOrderId, resumeOrder, resumeStarted, resumePaymentIntent])
+
   const shippingCost = shippingMethod === 'standard' ? 0 : shippingMethod === 'express' ? 14.99 : 29.99
-  const taxes = (total + shippingCost) * 0.13
-  const orderTotal = total + shippingCost + taxes
+  const subtotalBase = resumeOrder && resumeOrder.status === 'pending' ? resumeOrder.subtotal : total
+  const taxes = resumeOrder && resumeOrder.status === 'pending' ? resumeOrder.tax : (total + shippingCost) * 0.13
+  const orderTotal = resumeOrder && resumeOrder.status === 'pending' ? resumeOrder.total : total + shippingCost + taxes
 
   const REQUIRED_FIELDS: (keyof ShippingData)[] = ['email', 'firstName', 'lastName', 'line1', 'city', 'province', 'postalCode']
 
@@ -253,14 +309,11 @@ export default function CheckoutPage() {
   }
 
   const goToStep = async (target: number) => {
-    if (target < 2 && clientSecret) setClientSecret(null)
-
     if (target === 2) {
       const err = validateShipping()
       if (err) { setValidationError(err); return }
       setValidationError(null)
 
-      // Optionally save the address
       if (saveAddressChecked && convexUser) {
         try {
           await saveAddress({
@@ -279,19 +332,46 @@ export default function CheckoutPage() {
         } catch {}
       }
 
+      if (!resumeOrderId && myPending && myPending.length > 0) {
+        setValidationError(null)
+        router.push(`/checkout?resume=${myPending[0]._id}`)
+        return
+      }
+
       if (!clientSecret) {
         setIntentLoading(true)
         setIntentError(null)
+        let createdOrderId: Id<'orders'> | null = null
         try {
-          const res = await fetch('/api/create-payment-intent', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amountInCents: Math.round(orderTotal * 100) }),
+          createdOrderId = await createOrder({
+            items: items.map(i => ({
+              productId: i.productId as Id<'products'>,
+              color: i.color,
+              size: i.size,
+              quantity: i.qty,
+            })),
+            shippingAddress: {
+              line1: shipping.line1,
+              line2: shipping.line2 || undefined,
+              city: shipping.city,
+              province: shipping.province,
+              postalCode: shipping.postalCode,
+              country: shipping.country,
+            },
+            shippingMethod,
           })
-          const data = await res.json()
-          if (!res.ok) throw new Error(data.error ?? 'Failed to initialize payment')
-          setClientSecret(data.clientSecret)
+
+          const { clientSecret: secret } = await createPaymentIntent({
+            convexOrderId: createdOrderId,
+          })
+
+          setOrderId(createdOrderId)
+          setPaymentIntentId(secret.split('_secret_')[0])
+          setClientSecret(secret)
         } catch (err: unknown) {
+          if (createdOrderId) {
+            deleteIfPending({ id: createdOrderId }).catch(() => {})
+          }
           setIntentError(err instanceof Error ? err.message : 'Failed to initialize payment')
           setIntentLoading(false)
           return
@@ -315,7 +395,7 @@ export default function CheckoutPage() {
             <div className="w-16 h-20 bg-neutral-200 shrink-0 flex items-end justify-center pb-1.5 relative">
               <div className="w-7 h-12 bg-neutral-400 rounded-t-full" />
               {item.qty > 1 && (
-                <span className="absolute -top-2 -right-2 bg-black text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-black text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">
                   {item.qty}
                 </span>
               )}
@@ -360,7 +440,7 @@ export default function CheckoutPage() {
                 <button
                   onClick={() => i <= maxStep ? goToStep(i) : undefined}
                   disabled={i > maxStep}
-                  className={`text-[10px] tracking-widest uppercase transition-colors ${
+                  className={`text-[11px] tracking-widest uppercase transition-colors ${
                     i === step ? 'text-black'
                     : i < step ? 'text-neutral-400 hover:text-black'
                     : 'text-neutral-300 cursor-default'
@@ -373,7 +453,7 @@ export default function CheckoutPage() {
               </div>
             ))}
           </div>
-          <span className="text-[10px] tracking-widest uppercase text-neutral-400 hidden md:flex items-center gap-1.5">
+          <span className="text-[11px] tracking-widest uppercase text-neutral-400 hidden md:flex items-center gap-1.5">
             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
               <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
@@ -384,8 +464,28 @@ export default function CheckoutPage() {
         <div className="grid md:grid-cols-[1fr_380px] min-h-[calc(100vh-var(--nav-height,60px))]">
           <div className="px-6 md:px-12 py-10 border-r border-neutral-200">
 
+            {/* Resume-payment loading / error (arrived via ?resume=) */}
+            {resumeOrderId && step < 2 && (
+              <div className="py-12">
+                {resumeError ? (
+                  <div className="text-center border border-dashed border-neutral-200 py-12 px-6">
+                    <p className="font-serif text-2xl text-black mb-2">Can't resume this order</p>
+                    <p className="text-[13px] text-neutral-500 mb-6">{resumeError}</p>
+                    <button onClick={() => router.push('/account')} className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors">
+                      Back to My Account →
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center py-16 gap-4">
+                    <div className="w-4 h-4 border border-neutral-300 border-t-black rounded-full animate-spin" />
+                    <p className="text-[12px] tracking-widest uppercase text-neutral-400">Resuming your payment…</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Step 0: Cart */}
-            {step === 0 && (
+            {step === 0 && !resumeOrderId && (
               <div>
                 <h2 className="font-serif text-2xl mb-6 text-black">Your Cart</h2>
                 {items.length === 0 ? (
@@ -548,13 +648,22 @@ export default function CheckoutPage() {
               >
                 <StripeSteps
                   step={step}
-                  onBack={() => step === 2 ? goToStep(1) : goToStep(2)}
+                  onBack={() => {
+                    if (resumeOrderId) { router.push('/account'); return }
+                    step === 2 ? goToStep(1) : goToStep(2)
+                  }}
                   onNextFromPayment={() => goToStep(3)}
+                  onPaid={async () => {
+                    if (paymentIntentId) {
+                      await markPaidByIntentId({ stripePaymentIntentId: paymentIntentId })
+                    }
+                    router.push(`/confirmation?orderId=${orderId}`)
+                  }}
                   shipping={shipping}
                   shippingMethod={shippingMethod}
                   shippingCost={shippingCost}
                   taxes={taxes}
-                  subtotal={total}
+                  subtotal={subtotalBase}
                   orderTotal={orderTotal}
                 />
               </Elements>
@@ -566,5 +675,13 @@ export default function CheckoutPage() {
       </div>
       <Footer />
     </>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div style={{ paddingTop: 'var(--nav-height, 60px)' }} />}>
+      <CheckoutInner />
+    </Suspense>
   )
 }

@@ -5,6 +5,7 @@ import '../styles/globals.css'
 import { CartProvider } from '@/lib/cartContext'
 import { ConvexClerkProvider } from '@/lib/convexProvider'
 import { Nav } from '@/components/layout/Nav'
+import { PendingPaymentBanner } from '@/components/layout/PendingPaymentBanner'
 import { CartDrawer } from '@/components/layout/CartDrawer'
 import { SmoothScroll } from '@/components/layout/SmoothScroll'
 import { ZoomLock } from '@/components/layout/ZoomLock'
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <ZoomLock />
               <SmoothScroll />
               <Nav />
+              <PendingPaymentBanner />
               <CartDrawer />
               <main>{children}</main>
             </CartProvider>

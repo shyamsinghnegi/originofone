@@ -1,17 +1,39 @@
-import { currentUser } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import Link from "next/link";
+"use client";
 
-export default async function AdminLayout({
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useConvexAuth, useQuery } from "convex/react";
+import { api } from "@/../convex/_generated/api";
+
+// Admin access is gated on the Convex users.role field (single source of truth),
+// matching the backend requireAdmin checks. Non-admins are redirected out.
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // currentUser() fetches fresh data including publicMetadata (not cached in JWT)
-  const user = await currentUser();
-  if (!user) redirect("/sign-in");
-  const role = (user.publicMetadata as any)?.role;
-  if (role !== "admin") redirect("/unauthorized");
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const admin = useQuery(api.users.isAdmin, isAuthenticated ? {} : "skip");
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated) {
+      router.replace("/sign-in");
+    } else if (admin === false) {
+      router.replace("/unauthorized");
+    }
+  }, [isLoading, isAuthenticated, admin, router]);
+
+  // While auth/role is resolving, or a redirect is pending, show nothing.
+  if (isLoading || admin === undefined || admin === false || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-4 h-4 border border-neutral-300 border-t-black rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">

@@ -11,16 +11,27 @@ export const checkAbandonedCarts = internalAction({
     });
 
     for (const cart of abandonedCarts) {
-      const user = await ctx.runQuery(api.users.getByClerkId, {
-        clerkId: cart.userId as any,
+      const user = await ctx.runQuery(api.users.getUserById, {
+        id: cart.userId,
       });
       if (!user) continue;
 
-      await ctx.runAction(internal.actions.email.sendAbandonedCartEmail, {
-        userEmail: user.email,
-        userName: user.name,
-        itemCount: cart.items.length,
-      });
+      try {
+        await ctx.runAction(internal.actions.email.sendAbandonedCartEmail, {
+          userEmail: user.email,
+          userName: user.name,
+          itemCount: cart.items.length,
+        });
+      } catch (err) {
+        console.error(
+          `Abandoned-cart email failed for cart ${cart._id}:`,
+          err instanceof Error ? err.message : err
+        );
+      } finally {
+        await ctx.runMutation(internal.cart.recordReminderSent, {
+          cartId: cart._id,
+        });
+      }
     }
   },
 });

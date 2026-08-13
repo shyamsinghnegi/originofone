@@ -2,6 +2,69 @@ import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+const SHIPPING_COSTS: Record<string, number> = {
+  standard: 0,
+  express: 14.99,
+  overnight: 29.99,
+};
+const TAX_RATE = 0.13;
+
+async function priceOrder(
+  ctx: any,
+  clientItems: Array<{
+    productId: any;
+    color: string;
+    size: string;
+    quantity: number;
+  }>,
+  shippingMethod: string
+) {
+  if (clientItems.length === 0) throw new Error("Cart is empty");
+
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const items = [];
+  let subtotal = 0;
+
+  for (const ci of clientItems) {
+    if (!Number.isInteger(ci.quantity) || ci.quantity < 1 || ci.quantity > 100) {
+      throw new Error("Invalid quantity");
+    }
+    const product = await ctx.db.get(ci.productId);
+    if (!product || !product.isActive) {
+      throw new Error("Product not available");
+    }
+    const variant = product.variants.find(
+      (val: any) => val.color === ci.color && val.size === ci.size
+    );
+    if (!variant) throw new Error("Selected variant does not exist");
+
+    const price = product.price;
+    subtotal += price * ci.quantity;
+
+    items.push({
+      productId: ci.productId,
+      slug: product.slug,
+      name: product.name,
+      price,
+      quantity: ci.quantity,
+      color: ci.color,
+      size: ci.size,
+      image: product.images?.[0] ?? "",
+    });
+  }
+
+  const shippingCost = SHIPPING_COSTS[shippingMethod];
+  if (shippingCost === undefined) throw new Error("Invalid shipping method");
+
+  subtotal = round(subtotal);
+  const tax = round((subtotal + shippingCost) * TAX_RATE);
+  const total = round(subtotal + shippingCost + tax);
+
+  return { items, subtotal, shippingCost, tax, total };
+}
+
 const orderItemSchema = v.object({
   productId: v.id("products"),
   slug: v.string(),
@@ -11,6 +74,13 @@ const orderItemSchema = v.object({
   color: v.string(),
   size: v.string(),
   image: v.string(),
+});
+
+const orderItemInputSchema = v.object({
+  productId: v.id("products"),
+  color: v.string(),
+  size: v.string(),
+  quantity: v.number(),
 });
 
 const shippingAddressSchema = v.object({
@@ -25,12 +95,6 @@ const shippingAddressSchema = v.object({
 async function requireAdmin(ctx: any) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthenticated");
-
-  // Check JWT role claim first (populated by Clerk JWT template custom claim)
-  const jwtRole = (identity as any).role;
-  if (jwtRole === "admin") return { clerkId: identity.subject, role: "admin" };
-
-  // Fall back to DB lookup
   const user = await ctx.db
     .query("users")
     .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", identity.subject))
@@ -54,6 +118,25 @@ export const listMine = query({
       .withIndex("by_user_id", (q) => q.eq("userId", user._id))
       .order("desc")
       .collect();
+  },
+});
+
+export const listMyPending = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) return [];
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_user_id", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .collect();
+    return orders.filter((o) => o.status === "pending");
   },
 });
 
@@ -107,13 +190,9 @@ export const getById = query({
 
 export const create = mutation({
   args: {
-    items: v.array(orderItemSchema),
+    items: v.array(orderItemInputSchema),
     shippingAddress: shippingAddressSchema,
     shippingMethod: v.string(),
-    subtotal: v.number(),
-    shippingCost: v.number(),
-    tax: v.number(),
-    total: v.number(),
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -125,11 +204,123 @@ export const create = mutation({
       .unique();
     if (!user) throw new Error("User not found");
 
-    return ctx.db.insert("orders", {
+    const priced = await priceOrder(ctx, args.items, args.shippingMethod);
+
+    const orderId = await ctx.db.insert("orders", {
       userId: user._id,
       status: "pending",
-      ...args,
+      paymentDueAt: Date.now() + ONE_HOUR_MS,
+      items: priced.items,
+      shippingAddress: args.shippingAddress,
+      shippingMethod: args.shippingMethod,
+      subtotal: priced.subtotal,
+      shippingCost: priced.shippingCost,
+      tax: priced.tax,
+      total: priced.total,
+      notes: args.notes,
     });
+
+    await ctx.scheduler.runAfter(
+      10 * 60 * 1000,
+      internal.orders.maybeSendPendingPaymentEmail,
+      { orderId }
+    );
+
+    return orderId;
+  },
+});
+
+export const maybeSendPendingPaymentEmail = internalMutation({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order || order.status !== "pending") return;
+    const user = await ctx.db.get(order.userId);
+    if (!user) return;
+    await ctx.scheduler.runAfter(0, internal.actions.email.sendPendingPaymentEmail, {
+      orderId: order._id,
+      userEmail: user.email,
+      userName: user.name,
+      total: order.total,
+    });
+  },
+});
+
+export const deleteIfPending = mutation({
+  args: { id: v.id("orders") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) throw new Error("User not found");
+
+    const order = await ctx.db.get(args.id);
+    if (!order) return;
+    if (order.userId !== user._id) throw new Error("Forbidden");
+    if (order.status !== "pending" || order.stripePaymentIntentId) return;
+
+    await ctx.db.delete(args.id);
+  },
+});
+
+export const getForResume = query({
+  args: { id: v.id("orders") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) throw new Error("User not found");
+
+    const order = await ctx.db.get(args.id);
+    if (!order) throw new Error("Order not found");
+    if (order.userId !== user._id) throw new Error("Forbidden");
+    if (order.status !== "pending") {
+      throw new Error("This order can no longer be paid.");
+    }
+    return {
+      amountInCents: Math.round(order.total * 100),
+      items: order.items,
+      shippingAddress: order.shippingAddress,
+      shippingMethod: order.shippingMethod,
+      subtotal: order.subtotal,
+      shippingCost: order.shippingCost,
+      tax: order.tax,
+      total: order.total,
+    };
+  },
+});
+
+export const extendPaymentWindow = internalMutation({
+  args: { id: v.id("orders") },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.id);
+    if (!order || order.status !== "pending") return;
+    await ctx.db.patch(args.id, { paymentDueAt: Date.now() + ONE_HOUR_MS });
+  },
+});
+
+export const expirePendingOrders = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const pending = await ctx.db
+      .query("orders")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .collect();
+    let expired = 0;
+    for (const order of pending) {
+      if (order.paymentDueAt && order.paymentDueAt <= now) {
+        await ctx.db.patch(order._id, { status: "failed" });
+        expired++;
+      }
+    }
+    return { expired };
   },
 });
 
@@ -145,7 +336,24 @@ export const attachStripeIntent = internalMutation({
   },
 });
 
-// Public so the Stripe webhook (Next.js route) can call it via ConvexHttpClient
+async function fulfillOrder(ctx: any, orderId: any) {
+  const order = await ctx.db.get(orderId);
+  if (!order) return null;
+  if (order.status !== "pending") return order;
+
+  await ctx.db.patch(order._id, { status: "paid" });
+  await ctx.runMutation(internal.cart.clear, { userId: order.userId });
+  await ctx.runMutation(internal.products.decrementStock, {
+    items: order.items.map((i: any) => ({
+      productId: i.productId,
+      color: i.color,
+      size: i.size,
+      quantity: i.quantity,
+    })),
+  });
+  return order;
+}
+
 export const markPaid = mutation({
   args: { stripePaymentIntentId: v.string() },
   handler: async (ctx, args) => {
@@ -156,19 +364,32 @@ export const markPaid = mutation({
       )
       .unique();
     if (!order) throw new Error("Order not found");
+    return fulfillOrder(ctx, order._id);
+  },
+});
 
-    await ctx.db.patch(order._id, { status: "paid" });
-    await ctx.runMutation(internal.cart.clear, { userId: order.userId });
-    await ctx.runMutation(internal.products.decrementStock, {
-      items: order.items.map((i) => ({
-        productId: i.productId,
-        color: i.color,
-        size: i.size,
-        quantity: i.quantity,
-      })),
-    });
+export const markPaidByIntentId = mutation({
+  args: { stripePaymentIntentId: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) throw new Error("User not found");
 
-    return order;
+    const order = await ctx.db
+      .query("orders")
+      .withIndex("by_stripe_payment_intent", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
+      )
+      .unique();
+    if (!order) throw new Error("Order not found");
+    if (order.userId !== user._id) throw new Error("Forbidden");
+
+    await fulfillOrder(ctx, order._id);
+    return order._id;
   },
 });
 

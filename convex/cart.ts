@@ -73,7 +73,12 @@ export const upsertItem = mutation({
         )
       : [...cart!.items, args.item];
 
-    await ctx.db.patch(cart!._id, { items, lastUpdated: Date.now() });
+    await ctx.db.patch(cart!._id, {
+      items,
+      lastUpdated: Date.now(),
+      remindersSent: 0,
+      lastRemindedAt: undefined,
+    });
   },
 });
 
@@ -117,7 +122,12 @@ export const updateQuantity = mutation({
               : i
           );
 
-    await ctx.db.patch(cart._id, { items, lastUpdated: Date.now() });
+    await ctx.db.patch(cart._id, {
+      items,
+      lastUpdated: Date.now(),
+      remindersSent: 0,
+      lastRemindedAt: undefined,
+    });
   },
 });
 
@@ -152,6 +162,8 @@ export const removeItem = mutation({
           )
       ),
       lastUpdated: Date.now(),
+      remindersSent: 0,
+      lastRemindedAt: undefined,
     });
   },
 });
@@ -169,13 +181,36 @@ export const clear = internalMutation({
   },
 });
 
+const MAX_REMINDERS = 3;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 export const getAbandoned = internalMutation({
   args: { olderThanMs: v.number() },
   handler: async (ctx, args) => {
-    const cutoff = Date.now() - args.olderThanMs;
+    const now = Date.now();
+    const idleCutoff = now - args.olderThanMs;
     const carts = await ctx.db.query("cart").collect();
-    return carts.filter(
-      (c) => c.items.length > 0 && c.lastUpdated < cutoff
-    );
+    return carts.filter((c) => {
+      if (c.items.length === 0) return false;
+      if (c.lastUpdated >= idleCutoff) return false;
+      const sent = c.remindersSent ?? 0;
+      if (sent >= MAX_REMINDERS) return false;
+      if (c.lastRemindedAt && now - c.lastRemindedAt < ONE_DAY_MS - 60 * 60 * 1000) {
+        return false;
+      }
+      return true;
+    });
+  },
+});
+
+export const recordReminderSent = internalMutation({
+  args: { cartId: v.id("cart") },
+  handler: async (ctx, args) => {
+    const cart = await ctx.db.get(args.cartId);
+    if (!cart) return;
+    await ctx.db.patch(args.cartId, {
+      remindersSent: (cart.remindersSent ?? 0) + 1,
+      lastRemindedAt: Date.now(),
+    });
   },
 });

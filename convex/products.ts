@@ -122,6 +122,7 @@ export const create = mutation({
     images: v.array(v.string()),
     category: v.string(),
     tags: v.array(v.string()),
+    fabric: v.optional(v.string()),
     variants: v.array(variantSchema),
   },
   handler: async (ctx, args) => {
@@ -146,6 +147,7 @@ export const update = mutation({
     images: v.optional(v.array(v.string())),
     category: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
+    fabric: v.optional(v.string()),
     variants: v.optional(v.array(variantSchema)),
     isActive: v.optional(v.boolean()),
   },

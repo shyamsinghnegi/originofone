@@ -8,6 +8,23 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY!);
 }
 
+async function sendEmail(
+  resend: Resend,
+  payload: { from: string; to: string; subject: string; text: string }
+) {
+  const { data, error } = await resend.emails.send(payload);
+  if (error) {
+    console.error("Resend send failed:", JSON.stringify(error));
+    throw new Error(`Email send failed: ${error.message ?? error.name}`);
+  }
+  return data;
+}
+
+const FROM_ORDERS =
+  process.env.EMAIL_FROM_ORDERS ?? "Origin of One <onboarding@resend.dev>";
+const FROM_HELLO =
+  process.env.EMAIL_FROM_HELLO ?? "Origin of One <onboarding@resend.dev>";
+
 export const sendOrderConfirmation = internalAction({
   args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
@@ -26,8 +43,8 @@ export const sendOrderConfirmation = internalAction({
       .map((i: any) => `${i.name} (${i.color}, ${i.size}) × ${i.quantity} — $${i.price.toFixed(2)}`)
       .join("\n");
 
-    await resend.emails.send({
-      from: "Origin of One <orders@originofone.ca>",
+    await sendEmail(resend, {
+      from: FROM_ORDERS,
       to: user.email,
       subject: `Order Confirmed — #${args.orderId.slice(-8).toUpperCase()}`,
       text: [
@@ -52,6 +69,38 @@ export const sendOrderConfirmation = internalAction({
   },
 });
 
+export const sendPendingPaymentEmail = internalAction({
+  args: {
+    orderId: v.id("orders"),
+    userEmail: v.string(),
+    userName: v.optional(v.string()),
+    total: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const resend = getResend();
+    const siteUrl = process.env.SITE_URL ?? "https://originofone.ca";
+    const resumeLink = `${siteUrl}/checkout?resume=${args.orderId}`;
+
+    await sendEmail(resend, {
+      from: FROM_ORDERS,
+      to: args.userEmail,
+      subject: "Complete your payment — your order is reserved",
+      text: [
+        `Hi ${args.userName ?? "there"},`,
+        "",
+        `Your order (total $${args.total.toFixed(2)} CAD) is reserved but the payment wasn't completed.`,
+        "",
+        "Complete your payment within 1 hour to secure your order:",
+        resumeLink,
+        "",
+        "After that, the reservation is released and the order is cancelled.",
+        "",
+        "— Origin of One",
+      ].join("\n"),
+    });
+  },
+});
+
 export const sendAbandonedCartEmail = internalAction({
   args: {
     userEmail: v.string(),
@@ -60,8 +109,8 @@ export const sendAbandonedCartEmail = internalAction({
   },
   handler: async (ctx, args) => {
     const resend = getResend();
-    await resend.emails.send({
-      from: "Origin of One <hello@originofone.ca>",
+    await sendEmail(resend, {
+      from: FROM_HELLO,
       to: args.userEmail,
       subject: "You left something behind",
       text: [

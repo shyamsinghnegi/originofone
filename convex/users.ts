@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 
 export const getByClerkId = query({
   args: { clerkId: v.string() },
@@ -8,6 +8,13 @@ export const getByClerkId = query({
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
       .unique();
+  },
+});
+
+export const getUserById = query({
+  args: { id: v.id("users") },
+  handler: async (ctx, args) => {
+    return ctx.db.get(args.id);
   },
 });
 
@@ -20,6 +27,35 @@ export const me = query({
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
+  },
+});
+
+export const setRoleByEmail = internalMutation({
+  args: {
+    email: v.string(),
+    role: v.union(v.literal("admin"), v.literal("customer")),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .unique();
+    if (!user) throw new Error(`No user with email ${args.email}`);
+    await ctx.db.patch(user._id, { role: args.role });
+    return { updated: user._id, email: args.email, role: args.role };
+  },
+});
+
+export const isAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return false;
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    return user?.role === "admin";
   },
 });
 

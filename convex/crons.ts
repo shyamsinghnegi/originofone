@@ -6,6 +6,8 @@ const crons = cronJobs();
 // Nudge users who left items in cart for 1+ hour
 crons.hourly("abandoned cart nudge", { minuteUTC: 15 }, internal.cronHandlers.checkAbandonedCarts);
 
+crons.interval("expire pending orders", { minutes: 15 }, internal.orders.expirePendingOrders);
+
 // Nightly inventory reconciliation
 crons.daily("inventory sync", { hourUTC: 3, minuteUTC: 0 }, internal.cronHandlers.syncInventory);
 

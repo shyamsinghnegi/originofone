@@ -48,6 +48,7 @@ export default defineSchema({
     images: v.array(v.string()),
     category: v.string(),
     tags: v.array(v.string()),
+    fabric: v.optional(v.string()),
     variants: v.array(
       v.object({
         color: v.string(),
@@ -87,9 +88,11 @@ export default defineSchema({
       v.literal("shipped"),
       v.literal("delivered"),
       v.literal("cancelled"),
-      v.literal("refunded")
+      v.literal("refunded"),
+      v.literal("failed")
     ),
     stripePaymentIntentId: v.optional(v.string()),
+    paymentDueAt: v.optional(v.number()),
     shippingAddress: v.object({
       line1: v.string(),
       line2: v.optional(v.string()),
@@ -120,6 +123,8 @@ export default defineSchema({
     userId: v.id("users"),
     items: v.array(cartItem),
     lastUpdated: v.number(),
+    remindersSent: v.optional(v.number()),
+    lastRemindedAt: v.optional(v.number()),
   }).index("by_user_id", ["userId"]),
 
   reviews: defineTable({
