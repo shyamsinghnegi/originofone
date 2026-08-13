@@ -73,9 +73,9 @@ export function Nav() {
 
         {/* Left nav links */}
         <div className="hidden md:flex items-center gap-8">
-          <Link href="/collection" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>Collections</Link>
-          <Link href="/new-in" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>New In</Link>
-          <Link href="/about" className={`text-[10px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>About</Link>
+          <Link href="/collection" className={`text-[11px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>Collections</Link>
+          <Link href="/new-in" className={`text-[11px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>New In</Link>
+          <Link href="/about" className={`text-[11px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>About</Link>
         </div>
 
         {/* Centre logo */}
@@ -108,7 +108,7 @@ export function Nav() {
         {/* Right icons */}
         <div className="flex items-center gap-5">
           <button aria-label="Search" onClick={() => setSearchOpen(true)} className={`transition-colors ${iconClasses}`}>
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+            <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </button>
@@ -118,17 +118,17 @@ export function Nav() {
             user ? (
               <Link href="/account" className={`hidden md:flex items-center justify-center transition-colors ${iconClasses}`} aria-label={initials ? `Account (${initials})` : 'Account'}>
                 {initials ? (
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium border ${isTransparent ? 'border-white/60 text-white' : 'border-neutral-300 text-neutral-600'}`}>
+                  <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-medium border ${isTransparent ? 'border-white/60 text-white' : 'border-neutral-300 text-neutral-600'}`}>
                     {initials.toUpperCase()}
                   </span>
                 ) : (
-                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+                  <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                   </svg>
                 )}
               </Link>
             ) : (
-              <Link href="/sign-in" className={`hidden md:block text-[10px] tracking-widest uppercase transition-colors ${linkClasses}`}>
+              <Link href="/sign-in" className={`hidden md:block text-[11px] tracking-widest uppercase transition-colors ${linkClasses}`}>
                 Sign In
               </Link>
             )
@@ -140,13 +140,13 @@ export function Nav() {
             className={`relative transition-colors ${iconClasses}`}
             aria-label="Cart"
           >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+            <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
               <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
               <line x1="3" y1="6" x2="21" y2="6" />
               <path d="M16 10a4 4 0 0 1-8 0" />
             </svg>
             {count > 0 && (
-              <span className={`absolute -top-2 -right-2 rounded-full w-4 h-4 text-[9px] flex items-center justify-center font-medium transition-colors ${badgeClasses}`}>
+              <span className={`absolute -top-2 -right-2 rounded-full w-5 h-5 text-[11px] flex items-center justify-center font-medium transition-colors ${badgeClasses}`}>
                 {count}
               </span>
             )}

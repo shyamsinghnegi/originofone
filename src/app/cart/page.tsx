@@ -43,7 +43,7 @@ export default function CartPage() {
                       </div>
                     </Link>
                     <div>
-                      <p className="text-[10px] tracking-widest uppercase text-muted mb-1">Origin of One</p>
+                      <p className="text-[11px] tracking-widest uppercase text-muted mb-1">Origin of One</p>
                       <Link href={`/product/${item.slug}`}>
                         <p className="font-serif text-xl mb-1 hover:text-muted transition-colors">{item.name}</p>
                       </Link>
@@ -65,10 +65,10 @@ export default function CartPage() {
 
             {items.length > 0 && (
               <div className="mt-8">
-                <p className="text-[10px] tracking-widest uppercase text-muted mb-3">Promo Code</p>
+                <p className="text-[11px] tracking-widest uppercase text-muted mb-3">Promo Code</p>
                 <div className="flex">
                   <input type="text" placeholder="Enter code" className="flex-1 border border-border px-4 py-2.5 text-[12px] bg-transparent outline-none focus:border-ink transition-colors placeholder:text-muted" />
-                  <button className="border border-border border-l-0 px-5 text-[10px] tracking-widest uppercase text-muted hover:bg-ink hover:text-paper hover:border-ink transition-all duration-200">Apply</button>
+                  <button className="border border-border border-l-0 px-5 text-[11px] tracking-widest uppercase text-muted hover:bg-ink hover:text-paper hover:border-ink transition-all duration-200">Apply</button>
                 </div>
               </div>
             )}

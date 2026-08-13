@@ -4,7 +4,7 @@
 @theme {
   --color-ink: #000000;
   --color-paper: #ffffff;
-  --color-muted: #737373;
+  --color-muted: #525252;
   --color-border: #e5e5e5;
   --color-gray-50: #fafafa;
   --color-gray-100: #f5f5f5;
@@ -12,6 +12,14 @@
   --color-gray-300: #d4d4d4;
   --color-gray-400: #a3a3a3;
   --color-gray-900: #171717;
+
+  /* Darkened for contrast — the site uses Tailwind's neutral-* scale
+     extensively for secondary text (labels, prices, captions), and the
+     defaults (neutral-400 #a3a3a3 ~2.5:1, neutral-500 #737373 ~4.6:1 on
+     white) were too low-contrast/hard to read. Overriding here updates every
+     existing text-neutral-400/500 usage site-wide without touching each file. */
+  --color-neutral-400: #6b6b6b; /* was #a3a3a3 — now ~5.7:1 on white */
+  --color-neutral-500: #4a4a4a; /* was #737373 — now ~8.3:1 on white */
 
   --font-family-editorial: 'DM Serif Display', Georgia, serif;
   --font-family-body: 'DM Sans', 'Helvetica Neue', sans-serif;
@@ -23,7 +31,7 @@
   --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
   --ink: #000000;
   --paper: #ffffff;
-  --muted: #737373;
+  --muted: #525252;
   --border: #e5e5e5;
   --nav-height: 60px;
 }

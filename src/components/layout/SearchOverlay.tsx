@@ -86,30 +86,18 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
             </svg>
             <input
               ref={inputRef}
-              type="search"
+              type="text"
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Search products…"
               className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted text-ink"
               autoComplete="off"
             />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery('')}
-                aria-label="Clear search"
-                className="text-muted hover:text-ink transition-colors"
-              >
-                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            )}
             <button
               type="button"
-              onClick={onClose}
-              aria-label="Close search"
-              className="text-muted hover:text-ink transition-colors ml-1"
+              onClick={() => query ? setQuery('') : onClose()}
+              aria-label={query ? 'Clear search' : 'Close search'}
+              className="text-muted hover:text-ink transition-colors"
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -123,7 +111,7 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
           {!hasResults ? (
             /* Empty state — show collections */
             <div className="px-6 md:px-12 py-8">
-              <p className="text-[9px] tracking-widest uppercase text-muted mb-5">Collections</p>
+              <p className="text-[10px] tracking-widest uppercase text-muted mb-5">Collections</p>
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
@@ -153,7 +141,7 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
             <div className="px-6 md:px-12 py-7 grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8 md:gap-14">
               {/* Suggestions */}
               <div>
-                <p className="text-[9px] tracking-widest uppercase text-muted mb-4">Suggestions</p>
+                <p className="text-[10px] tracking-widest uppercase text-muted mb-4">Suggestions</p>
                 <div className="flex flex-col gap-3">
                   {suggestions.map((s, i) => (
                     <button
@@ -169,7 +157,7 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
 
               {/* Product rows */}
               <div>
-                <p className="text-[9px] tracking-widest uppercase text-muted mb-4">Products</p>
+                <p className="text-[10px] tracking-widest uppercase text-muted mb-4">Products</p>
                 <div>
                   {results.slice(0, 5).map(p => (
                     <Link
@@ -204,7 +192,7 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
           <div className="border-t border-border">
             <button
               onClick={handleSubmit}
-              className="w-full px-6 md:px-12 py-4 flex items-center justify-between text-[10px] tracking-widest uppercase hover:bg-neutral-50 transition-colors"
+              className="w-full px-6 md:px-12 py-4 flex items-center justify-between text-[11px] tracking-widest uppercase hover:bg-neutral-50 transition-colors"
             >
               <span>Search for &ldquo;{query}&rdquo;</span>
               <span>→</span>

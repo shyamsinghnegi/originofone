@@ -12,7 +12,7 @@ interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 export function Btn({ variant = 'dark', size = 'md', children, className = '', ...props }: BtnProps) {
   const base = 'inline-flex items-center justify-center tracking-widest uppercase font-sans font-light transition-all duration-200 cursor-pointer'
-  const sizes = { sm: 'px-5 py-2.5 text-[10px]', md: 'px-7 py-3.5 text-[10px]', lg: 'px-10 py-4 text-[11px]' }
+  const sizes = { sm: 'px-5 py-2.5 text-[11px]', md: 'px-7 py-3.5 text-[11px]', lg: 'px-10 py-4 text-[11px]' }
   const variants = {
     dark:    'bg-black text-white hover:bg-neutral-900',
     outline: 'border border-black text-black hover:bg-black hover:text-white',
@@ -29,7 +29,7 @@ export function Btn({ variant = 'dark', size = 'md', children, className = '', .
 export function SectionTitle({ eyebrow, title, className = '' }: { eyebrow?: string; title: React.ReactNode; className?: string }) {
   return (
     <div className={className}>
-      {eyebrow && <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-3">{eyebrow}</p>}
+      {eyebrow && <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-3">{eyebrow}</p>}
       <h2 className="font-serif text-4xl md:text-5xl font-normal leading-[1.05]">{title}</h2>
     </div>
   )
@@ -42,7 +42,7 @@ export function MarqueeStrip({ items }: { items: string[] }) {
     <div className="border-y border-neutral-200 overflow-hidden py-3 bg-white">
       <div className="animate-marquee">
         {doubled.map((item, i) => (
-          <span key={i} className="text-[10px] tracking-widest uppercase text-neutral-400 mx-8">{item}</span>
+          <span key={i} className="text-[11px] tracking-widest uppercase text-neutral-400 mx-8">{item}</span>
         ))}
       </div>
     </div>
@@ -137,8 +137,8 @@ export function ProductCard({ id, name, price, originalPrice, badge, colors, bg 
     <Link href={`/product/${id}`} className="group block">
       {/* ── Card image area ── */}
       <div
-        className="aspect-[3/4] relative overflow-hidden mb-3 transition-colors duration-500"
-        style={{ background: image ? '#f5f5f5' : currentBg }}
+        className="aspect-square relative overflow-hidden mb-2 transition-colors duration-500"
+        style={{ background: image ? '#ffffff' : currentBg }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
@@ -151,7 +151,7 @@ export function ProductCard({ id, name, price, originalPrice, badge, colors, bg 
 
         {/* Badge */}
         {badge && (
-          <span className="absolute top-3 left-3 bg-white text-black text-[9px] tracking-wider uppercase px-2 py-1 z-10">
+          <span className="absolute top-3 left-3 bg-white text-black text-[10px] tracking-wider uppercase px-2 py-1 z-10">
             {badge}
           </span>
         )}
@@ -201,7 +201,7 @@ export function ProductCard({ id, name, price, originalPrice, badge, colors, bg 
         )}
 
         {/* ── Quick add ── */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black text-white text-[10px] tracking-widest uppercase text-center py-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
+        <div className="absolute bottom-0 left-0 right-0 bg-black text-white text-[11px] tracking-widest uppercase text-center py-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
           Quick Add +
         </div>
       </div>
@@ -257,19 +257,19 @@ export function Footer() {
           </p>
         </div>
         <div>
-          <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Shop</p>
+          <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Shop</p>
           {['New Arrivals', 'Outerwear', 'Knitwear', 'Accessories', 'Sale'].map(l => (
             <a key={l} href="/collection" className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{l}</a>
           ))}
         </div>
         <div>
-          <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Help</p>
+          <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Help</p>
           {['Sizing Guide', 'Shipping Info', 'Returns', 'FAQ', 'Contact'].map(l => (
             <a key={l} href="#" className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{l}</a>
           ))}
         </div>
         <div>
-          <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Company</p>
+          <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Company</p>
           {['Our Story', 'Sustainability', 'Careers', 'Press'].map(l => (
             <a key={l} href="/about" className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{l}</a>
           ))}

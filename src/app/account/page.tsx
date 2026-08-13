@@ -27,6 +27,7 @@ export default function AccountPage() {
 
   const convexUser = useQuery(api.users.me, isAuthenticated ? undefined : 'skip')
   const orders = useQuery(api.orders.listMine, isAuthenticated ? undefined : 'skip')
+  const pendingOrders = useQuery(api.orders.listMyPending, isAuthenticated ? undefined : 'skip')
   const updateDetails = useMutation(api.users.updateDetails)
   const addAddress = useMutation(api.users.addAddress)
   const removeAddress = useMutation(api.users.removeAddress)
@@ -133,7 +134,7 @@ export default function AccountPage() {
           {/* Header */}
           <div className="flex items-end justify-between mb-10">
             <div>
-              <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-1">
+              <p className="text-[11px] tracking-widest uppercase text-neutral-400 mb-1">
                 {view === 'dashboard' ? 'My Account' : (
                   <button onClick={() => setView('dashboard')} className="hover:text-black transition-colors">
                     ← My Account
@@ -151,12 +152,34 @@ export default function AccountPage() {
             {view === 'dashboard' && (
               <button
                 onClick={handleSignOut}
-                className="text-[10px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors"
+                className="text-[11px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors"
               >
                 Sign Out
               </button>
             )}
           </div>
+
+          {/* Pending-payment banner — complete an unpaid order */}
+          {pendingOrders && pendingOrders.length > 0 && (
+            <div className="mb-8 border border-black bg-neutral-50">
+              {pendingOrders.map(order => (
+                <div key={order._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-neutral-200 last:border-b-0">
+                  <div>
+                    <p className="text-[11px] tracking-widest uppercase text-black mb-0.5">Payment incomplete</p>
+                    <p className="text-[12px] text-neutral-500">
+                      Order {order._id.slice(-8).toUpperCase()} — ${order.total.toFixed(2)} CAD · {order.items.reduce((s, i) => s + i.quantity, 0)} item{order.items.reduce((s, i) => s + i.quantity, 0) !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => router.push(`/checkout?resume=${order._id}`)}
+                    className="shrink-0 bg-black text-white text-[11px] tracking-widest uppercase px-5 py-3 hover:bg-neutral-900 transition-colors"
+                  >
+                    Complete Payment →
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Dashboard cards */}
           {view === 'dashboard' && (
@@ -193,7 +216,7 @@ export default function AccountPage() {
             <div className="max-w-sm space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">First Name</label>
+                  <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">First Name</label>
                   <input
                     type="text"
                     value={profile.firstName}
@@ -203,7 +226,7 @@ export default function AccountPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Last Name</label>
+                  <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Last Name</label>
                   <input
                     type="text"
                     value={profile.lastName}
@@ -215,12 +238,12 @@ export default function AccountPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Email Address</label>
+                <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Email Address</label>
                 <div className="border border-neutral-100 px-4 py-3 text-[13px] text-neutral-400 bg-neutral-50">{email}</div>
               </div>
 
               <div>
-                <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Phone Number</label>
+                <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Phone Number</label>
                 <input
                   type="tel"
                   value={profile.phone}
@@ -233,7 +256,7 @@ export default function AccountPage() {
               <button
                 onClick={handleSaveProfile}
                 disabled={profileSaving}
-                className="w-full bg-black text-white text-[10px] tracking-widest uppercase py-3.5 hover:bg-neutral-900 transition-colors disabled:opacity-50"
+                className="w-full bg-black text-white text-[11px] tracking-widest uppercase py-3.5 hover:bg-neutral-900 transition-colors disabled:opacity-50"
               >
                 {profileSaved ? 'Saved ✓' : profileSaving ? 'Saving…' : 'Save Changes'}
               </button>
@@ -265,7 +288,7 @@ export default function AccountPage() {
                         {new Date(order._creationTime).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
                     </div>
-                    <span className={`text-[10px] tracking-widest uppercase px-3 py-1 ${STATUS_STYLES[order.status] ?? 'text-neutral-500 bg-neutral-100'}`}>
+                    <span className={`text-[11px] tracking-widest uppercase px-3 py-1 ${STATUS_STYLES[order.status] ?? 'text-neutral-500 bg-neutral-100'}`}>
                       {order.status}
                     </span>
                   </div>
@@ -277,7 +300,7 @@ export default function AccountPage() {
                       </p>
                     ))}
                     <p className="text-[12px] text-neutral-400 mt-2">
-                      Total: ${(order.total / 100).toFixed(2)} CAD
+                      Total: ${order.total.toFixed(2)} CAD
                     </p>
                   </div>
                 </div>
@@ -289,17 +312,17 @@ export default function AccountPage() {
           {view === 'security' && (
             <div className="max-w-sm space-y-5">
               <div>
-                <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Email Address</label>
+                <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Email Address</label>
                 <div className="border border-neutral-100 px-4 py-3 text-[13px] text-neutral-400 bg-neutral-50">{email}</div>
               </div>
 
               {user?.passwordEnabled ? (
                 <>
                   <div className="pt-4 border-t border-neutral-100">
-                    <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-4">Change Password</p>
+                    <p className="text-[11px] tracking-widest uppercase text-neutral-400 mb-4">Change Password</p>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Current Password</label>
+                        <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Current Password</label>
                         <input
                           type="password"
                           value={pw.current}
@@ -308,7 +331,7 @@ export default function AccountPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">New Password</label>
+                        <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">New Password</label>
                         <input
                           type="password"
                           value={pw.next}
@@ -317,7 +340,7 @@ export default function AccountPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Confirm New Password</label>
+                        <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Confirm New Password</label>
                         <input
                           type="password"
                           value={pw.confirm}
@@ -331,7 +354,7 @@ export default function AccountPage() {
                     <button
                       onClick={handleChangePassword}
                       disabled={pwSaving || !pw.current || !pw.next || !pw.confirm}
-                      className="mt-5 w-full bg-black text-white text-[10px] tracking-widest uppercase py-3.5 hover:bg-neutral-900 transition-colors disabled:opacity-50"
+                      className="mt-5 w-full bg-black text-white text-[11px] tracking-widest uppercase py-3.5 hover:bg-neutral-900 transition-colors disabled:opacity-50"
                     >
                       {pwSaving ? 'Updating…' : 'Update Password'}
                     </button>
@@ -353,7 +376,7 @@ export default function AccountPage() {
                   <p className="text-[13px] text-neutral-400 mb-4">No addresses saved yet.</p>
                   <button
                     onClick={() => setShowAddForm(true)}
-                    className="text-[10px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors"
+                    className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors"
                   >
                     + Add Address
                   </button>
@@ -368,12 +391,12 @@ export default function AccountPage() {
                     <p className="text-[12px] text-neutral-400">{a.country}</p>
                     {a.phone && <p className="text-[12px] text-neutral-400 mt-0.5">{a.phone}</p>}
                     {a.isDefault && (
-                      <span className="inline-block mt-2 text-[9px] tracking-widest uppercase bg-neutral-100 text-neutral-500 px-2 py-0.5">Default</span>
+                      <span className="inline-block mt-2 text-[10px] tracking-widest uppercase bg-neutral-100 text-neutral-500 px-2 py-0.5">Default</span>
                     )}
                   </div>
                   <button
                     onClick={() => removeAddress({ addressId: a.id })}
-                    className="text-[10px] text-neutral-400 hover:text-black transition-colors"
+                    className="text-[11px] text-neutral-400 hover:text-black transition-colors"
                   >
                     Remove
                   </button>
@@ -383,7 +406,7 @@ export default function AccountPage() {
               {convexUser?.addresses && convexUser.addresses.length > 0 && !showAddForm && (
                 <button
                   onClick={() => setShowAddForm(true)}
-                  className="text-[10px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors"
+                  className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors"
                 >
                   + Add Address
                 </button>
@@ -391,9 +414,9 @@ export default function AccountPage() {
 
               {showAddForm && (
                 <div className="border border-neutral-200 p-6 space-y-4">
-                  <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-2">New Address</p>
+                  <p className="text-[11px] tracking-widest uppercase text-neutral-400 mb-2">New Address</p>
                   <div>
-                    <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Street Address</label>
+                    <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Street Address</label>
                     <input
                       type="text"
                       value={addr.line1}
@@ -403,7 +426,7 @@ export default function AccountPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Apt / Suite (optional)</label>
+                    <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Apt / Suite (optional)</label>
                     <input
                       type="text"
                       value={addr.line2}
@@ -414,7 +437,7 @@ export default function AccountPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">City</label>
+                      <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">City</label>
                       <input
                         type="text"
                         value={addr.city}
@@ -424,7 +447,7 @@ export default function AccountPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Province / State</label>
+                      <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Province / State</label>
                       <input
                         type="text"
                         value={addr.province}
@@ -436,7 +459,7 @@ export default function AccountPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Postal / ZIP</label>
+                      <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Postal / ZIP</label>
                       <input
                         type="text"
                         value={addr.postalCode}
@@ -446,7 +469,7 @@ export default function AccountPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Country</label>
+                      <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Country</label>
                       <input
                         type="text"
                         value={addr.country}
@@ -456,7 +479,7 @@ export default function AccountPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] tracking-widest uppercase text-neutral-400 mb-1.5">Phone (optional)</label>
+                    <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Phone (optional)</label>
                     <input
                       type="tel"
                       value={addr.phone}
@@ -478,13 +501,13 @@ export default function AccountPage() {
                     <button
                       onClick={handleAddAddress}
                       disabled={addrSaving || !addr.line1 || !addr.city || !addr.province || !addr.postalCode}
-                      className="flex-1 bg-black text-white text-[10px] tracking-widest uppercase py-3.5 hover:bg-neutral-900 transition-colors disabled:opacity-50"
+                      className="flex-1 bg-black text-white text-[11px] tracking-widest uppercase py-3.5 hover:bg-neutral-900 transition-colors disabled:opacity-50"
                     >
                       {addrSaving ? 'Saving…' : 'Save Address'}
                     </button>
                     <button
                       onClick={() => setShowAddForm(false)}
-                      className="px-6 border border-neutral-200 text-[10px] tracking-widest uppercase text-neutral-500 hover:border-black hover:text-black transition-colors"
+                      className="px-6 border border-neutral-200 text-[11px] tracking-widest uppercase text-neutral-500 hover:border-black hover:text-black transition-colors"
                     >
                       Cancel
                     </button>
@@ -504,14 +527,14 @@ function DashCard({ title, subtitle, icon, onClick }: { title: string; subtitle:
   return (
     <button
       onClick={onClick}
-      className="group border border-neutral-200 p-6 text-left hover:border-black transition-colors duration-200 flex flex-col gap-4"
+      className="group border border-neutral-200 p-8 text-left hover:border-black transition-colors duration-200 flex flex-col gap-5"
     >
-      <div className="text-neutral-400 group-hover:text-black transition-colors">{icon}</div>
+      <div className="text-neutral-500 group-hover:text-black transition-colors">{icon}</div>
       <div>
-        <p className="text-[13px] text-black font-medium mb-0.5">{title}</p>
-        <p className="text-[11px] text-neutral-400 truncate">{subtitle}</p>
+        <p className="text-[16px] text-black font-medium mb-1">{title}</p>
+        <p className="text-[13px] text-neutral-500 truncate">{subtitle}</p>
       </div>
-      <div className="text-[10px] tracking-widest uppercase text-neutral-400 group-hover:text-black transition-colors">
+      <div className="text-[12px] tracking-widest uppercase text-neutral-500 group-hover:text-black transition-colors">
         View →
       </div>
     </button>
@@ -520,7 +543,7 @@ function DashCard({ title, subtitle, icon, onClick }: { title: string; subtitle:
 
 function PersonIcon() {
   return (
-    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
     </svg>
   )
@@ -528,7 +551,7 @@ function PersonIcon() {
 
 function BoxIcon() {
   return (
-    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
       <polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
     </svg>
@@ -537,7 +560,7 @@ function BoxIcon() {
 
 function LockIcon() {
   return (
-    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
@@ -546,7 +569,7 @@ function LockIcon() {
 
 function PinIcon() {
   return (
-    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
     </svg>
   )

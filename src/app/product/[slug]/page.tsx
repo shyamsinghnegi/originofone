@@ -139,7 +139,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 </div>
               )}
               {badgeFromTags(product.tags) && (
-                <span className="absolute top-5 left-5 bg-paper text-[9px] tracking-wider uppercase px-2.5 py-1 z-10">
+                <span className="absolute top-5 left-5 bg-paper text-[10px] tracking-wider uppercase px-2.5 py-1 z-10">
                   {badgeFromTags(product.tags)}
                 </span>
               )}
@@ -166,7 +166,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
           {/* Info */}
           <div className="px-8 md:px-12 py-10 overflow-y-auto">
-            <p className="text-[10px] tracking-widest uppercase text-muted mb-3">Origin of One</p>
+            <p className="text-[11px] tracking-widest uppercase text-muted mb-3">Origin of One</p>
             <h1 className="font-serif text-4xl md:text-5xl leading-[1.05] mb-5">{product.name}</h1>
 
             {/* Price */}
@@ -252,7 +252,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
               {[['↩', 'Free Returns'], ['🍁', 'Ships Canada'], ['✦', 'Ethically Made']].map(([icon, label]) => (
                 <div key={label} className="py-3 text-center">
                   <div className="text-base mb-1">{icon}</div>
-                  <p className="text-[9px] tracking-wider uppercase text-muted">{label}</p>
+                  <p className="text-[10px] tracking-wider uppercase text-muted">{label}</p>
                 </div>
               ))}
             </div>
@@ -282,7 +282,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           <section className="px-6 md:px-10 py-16 border-t border-border">
             <div className="flex justify-between items-baseline mb-8">
               <h2 className="font-serif text-3xl md:text-4xl">You May Also Like</h2>
-              <Link href="/collection" className="text-[10px] tracking-widest uppercase text-muted hover:text-ink transition-colors link-underline">View All →</Link>
+              <Link href="/collection" className="text-[11px] tracking-widest uppercase text-muted hover:text-ink transition-colors link-underline">View All →</Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {(related ?? []).map(p => {

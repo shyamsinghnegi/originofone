@@ -37,7 +37,7 @@ export default function AboutPage() {
         </div>
 
         <div className="relative z-10 max-w-5xl">
-          <p className="text-[10px] tracking-widest uppercase text-white/40 mb-6">Est. Canada · Since 2019</p>
+          <p className="text-[11px] tracking-widest uppercase text-white/40 mb-6">Est. Canada · Since 2019</p>
           <h1 className="font-serif leading-[0.95] mb-8" style={{ fontSize: 'clamp(3.5rem, 10vw, 9rem)' }}>
             Built on<br />one <em>belief.</em>
           </h1>
@@ -72,7 +72,7 @@ export default function AboutPage() {
       {/* ── STORY SPLIT ── */}
       <section className="grid md:grid-cols-2 border-b border-neutral-200">
         <div className="flex flex-col justify-center px-8 md:px-14 py-16 md:py-20 order-2 md:order-1 border-t md:border-t-0 md:border-r border-neutral-200">
-          <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-6">The beginning</p>
+          <p className="text-[11px] tracking-widest uppercase text-neutral-400 mb-6">The beginning</p>
           <h2 className="font-serif text-4xl md:text-5xl leading-[1.1] mb-8 text-black">
             Born from a<br /><em>Canadian winter.</em>
           </h2>
@@ -100,7 +100,7 @@ export default function AboutPage() {
         {STATS.map((s, i) => (
           <div key={s.label} className={`py-12 text-center ${i < 3 ? 'border-r border-neutral-200' : ''}`}>
             <p className="font-serif text-5xl md:text-6xl leading-none mb-3 text-black">{s.num}</p>
-            <p className="text-[10px] tracking-widest uppercase text-neutral-400">{s.label}</p>
+            <p className="text-[11px] tracking-widest uppercase text-neutral-400">{s.label}</p>
           </div>
         ))}
       </div>

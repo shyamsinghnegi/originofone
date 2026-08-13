@@ -59,7 +59,7 @@ export function CartDrawer() {
                     <p className="text-[13px]">${(item.price * item.qty).toFixed(2)}</p>
                     <button
                       onClick={() => removeItem(item.productId, item.color, item.size)}
-                      className="text-[10px] text-muted hover:text-ink transition-colors mt-1 underline"
+                      className="text-[11px] text-muted hover:text-ink transition-colors mt-1 underline"
                     >Remove</button>
                   </div>
                 </div>

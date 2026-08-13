@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useMemo, Suspense } from 'react'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@/../convex/_generated/api'
@@ -9,6 +8,7 @@ import { ProductCard, MarqueeStrip, Footer, COLOR_MAP, COLOR_TO_BG } from '@/com
 
 const CATEGORIES = ['All', 'Outerwear', 'Knitwear', 'Layering', 'Accessories']
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'One Size', 'S/M', 'L/XL']
+const FABRICS = ['Wool', 'Cashmere', 'Merino', 'Cotton', 'Down', 'Leather', 'Synthetic']
 
 function badgeFromTags(tags: string[]): string | undefined {
   if (tags.includes('new') || tags.includes('new-in')) return 'New'
@@ -33,6 +33,8 @@ function SearchResults() {
   const [inputValue, setInputValue] = useState(initialQ)
   const [activeCategory, setActiveCategory] = useState('All')
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [selectedColors, setSelectedColors] = useState<string[]>([])
+  const [selectedFabrics, setSelectedFabrics] = useState<string[]>([])
   const [sort, setSort] = useState<'new' | 'old' | 'price-asc' | 'price-desc'>('new')
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortByOpen, setSortByOpen] = useState(false)
@@ -55,14 +57,20 @@ function SearchResults() {
     let out = [...list]
     if (activeCategory !== 'All') out = out.filter(p => p.category === activeCategory)
     if (selectedSizes.length > 0) out = out.filter(p => p.variants.some(v => selectedSizes.includes(v.size)))
+    if (selectedColors.length > 0) out = out.filter(p => p.variants.some(v => selectedColors.includes(v.color)))
+    if (selectedFabrics.length > 0) out = out.filter(p => p.fabric && selectedFabrics.includes(p.fabric))
     if (sort === 'price-asc') out.sort((a, b) => a.price - b.price)
     else if (sort === 'price-desc') out.sort((a, b) => b.price - a.price)
     else if (sort === 'old') out.reverse()
     return out
-  }, [results, activeCategory, selectedSizes, sort])
+  }, [results, activeCategory, selectedSizes, selectedColors, selectedFabrics, sort])
 
   const toggleSize = (s: string) =>
     setSelectedSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
+  const toggleColor = (c: string) =>
+    setSelectedColors(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])
+  const toggleFabric = (f: string) =>
+    setSelectedFabrics(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -70,27 +78,26 @@ function SearchResults() {
     router.push(`/search?q=${encodeURIComponent(inputValue.trim())}`)
     setActiveCategory('All')
     setSelectedSizes([])
+    setSelectedColors([])
+    setSelectedFabrics([])
   }
 
-  const clearFilters = () => { setActiveCategory('All'); setSelectedSizes([]) }
+  const clearFilters = () => {
+    setActiveCategory('All')
+    setSelectedSizes([])
+    setSelectedColors([])
+    setSelectedFabrics([])
+  }
 
   return (
     <>
       <div style={{ paddingTop: 'var(--nav-height, 60px)' }}>
         {/* Header */}
-        <div className="px-6 md:px-12 py-8 border-b border-border">
-          <p className="text-[9px] tracking-widest uppercase text-muted mb-2">
-            <Link href="/" className="hover:text-ink transition-colors">Home</Link>
-            {' / '}Search
-          </p>
-          <h1 className="font-serif text-4xl md:text-[44px] text-ink leading-none mb-5">
-            {initialQ ? `Results for "${initialQ}"` : 'Search'}
-          </h1>
-
+        <div className="px-6 md:px-12 py-6 border-b border-border">
           {/* Inline search bar */}
           <form onSubmit={handleSearch} className="flex items-center gap-3 max-w-xl border-b border-black pb-2">
             <input
-              type="search"
+              type="text"
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               placeholder="Search products…"
@@ -110,27 +117,24 @@ function SearchResults() {
               </svg>
             </button>
           </form>
-
-          <p className="text-[10px] text-muted mt-3">
-            {!initialQ
-              ? 'Enter a search term above'
-              : results === undefined
-              ? 'Loading…'
-              : `${filtered.length} result${filtered.length !== 1 ? 's' : ''}`}
-          </p>
         </div>
 
         {/* Filter strip */}
         <div className="sticky top-15 z-30 bg-paper/90 backdrop-blur-md py-3 w-full border-b border-black/5">
           <div className="flex items-center justify-between px-6 md:px-12 w-full">
-            <div className="text-[10px] md:text-[11px] font-medium tracking-widest uppercase text-ink">
-              {activeCategory === 'All' ? 'All Results' : activeCategory}
+            <div className="text-[11px] md:text-[11px] font-medium tracking-widest uppercase text-ink">
+              {!initialQ
+                ? 'Enter a search term'
+                : (activeCategory === 'All' ? 'All Results' : activeCategory)}
+              {initialQ && results !== undefined && ` · ${filtered.length}`}
               {selectedSizes.length > 0 && ` · ${selectedSizes.join(', ')}`}
+              {selectedColors.length > 0 && ` · ${selectedColors.join(', ')}`}
+              {selectedFabrics.length > 0 && ` · ${selectedFabrics.join(', ')}`}
             </div>
             <button
               onClick={() => setFilterOpen(true)}
               aria-label="Open filters"
-              className="px-4 py-2 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-black/5 text-[10px] md:text-[11px] text-ink hover:bg-neutral-50 transition-all whitespace-nowrap flex items-center gap-2 font-medium"
+              className="px-4 py-2 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-black/5 text-[11px] md:text-[11px] text-ink hover:bg-neutral-50 transition-all whitespace-nowrap flex items-center gap-2 font-medium"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M8 2h8" /><path d="M9 2v4.5L6 11v11h12V11l-3-4.5V2" /><path d="M6 11h12" />
@@ -141,7 +145,7 @@ function SearchResults() {
         </div>
 
         {/* Grid */}
-        <div className="px-6 md:px-12 py-8 min-h-screen">
+        <div className="px-6 md:px-12 py-8 min-h-screen bg-neutral-50">
           {!initialQ ? (
             <div className="py-24 text-center">
               <p className="font-serif text-2xl text-neutral-400">Start typing to search.</p>
@@ -188,8 +192,8 @@ function SearchResults() {
       />
       <div className={`fixed top-0 right-0 h-full w-85 max-w-[100vw] bg-paper z-201 flex flex-col transform transition-transform duration-400 ${filterOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex flex-col items-center justify-center py-4 border-b border-black/10 relative">
-          <h2 className="text-[10px] font-medium tracking-widest uppercase mb-0.5">Filter & Sort</h2>
-          <p className="text-[9px] text-muted">{filtered.length} Results</p>
+          <h2 className="text-[11px] font-medium tracking-widest uppercase mb-0.5">Filter & Sort</h2>
+          <p className="text-[10px] text-muted">{filtered.length} Results</p>
           <button onClick={() => setFilterOpen(false)} className="absolute right-5 top-1/2 -translate-y-1/2 p-2 -mr-2 text-muted hover:text-ink transition-colors">
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1" viewBox="0 0 24 24">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -205,7 +209,7 @@ function SearchResults() {
                 <button
                   key={c}
                   onClick={() => setActiveCategory(c)}
-                  className={`px-4 h-7 rounded-full text-[10px] transition-colors ${activeCategory === c ? 'bg-ink text-paper' : 'bg-black/5 text-ink hover:bg-black/10'}`}
+                  className={`px-4 h-7 rounded-full text-[11px] transition-colors ${activeCategory === c ? 'bg-ink text-paper' : 'bg-black/5 text-ink hover:bg-black/10'}`}
                 >
                   {c}
                 </button>
@@ -220,7 +224,7 @@ function SearchResults() {
                 <button
                   key={s}
                   onClick={() => toggleSize(s)}
-                  className={`min-w-9 px-2 h-7 rounded-full text-[10px] transition-colors ${selectedSizes.includes(s) ? 'bg-ink text-paper' : 'bg-black/5 text-ink hover:bg-black/10'}`}
+                  className={`min-w-9 px-2 h-7 rounded-full text-[11px] transition-colors ${selectedSizes.includes(s) ? 'bg-ink text-paper' : 'bg-black/5 text-ink hover:bg-black/10'}`}
                 >
                   {s}
                 </button>
@@ -228,8 +232,42 @@ function SearchResults() {
             </div>
           </div>
 
+          <div>
+            <h3 className="text-[11px] mb-2.5 text-ink font-medium">Color</h3>
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(COLOR_MAP).map(([name, hex]) => (
+                <button
+                  key={name}
+                  onClick={() => toggleColor(name)}
+                  aria-label={name}
+                  title={name}
+                  className="w-7 h-7 rounded-full border-2 transition-colors"
+                  style={{
+                    background: hex,
+                    borderColor: selectedColors.includes(name) ? '#000' : 'rgba(0,0,0,0.15)',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-[11px] mb-2.5 text-ink font-medium">Fabric Type</h3>
+            <div className="flex flex-wrap gap-2">
+              {FABRICS.map(f => (
+                <button
+                  key={f}
+                  onClick={() => toggleFabric(f)}
+                  className={`px-3 h-7 rounded-full text-[11px] transition-colors ${selectedFabrics.includes(f) ? 'bg-ink text-paper' : 'bg-black/5 text-ink hover:bg-black/10'}`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="border-t border-black/10 pt-6">
-            <button onClick={() => setSortByOpen(v => !v)} className="flex justify-between items-center w-full text-[10px]">
+            <button onClick={() => setSortByOpen(v => !v)} className="flex justify-between items-center w-full text-[11px]">
               <span className="text-ink font-medium">Sort by</span>
               <span className="flex items-center gap-1.5 text-muted">
                 {SORT_LABELS[sort]}
@@ -239,7 +277,7 @@ function SearchResults() {
               </span>
             </button>
             <div className={`overflow-hidden transition-all duration-300 ${sortByOpen ? 'max-h-50 mt-3 opacity-100' : 'max-h-0 opacity-0'}`}>
-              <div className="flex flex-col gap-2.5 pl-3 border-l border-black/10 text-[10px]">
+              <div className="flex flex-col gap-2.5 pl-3 border-l border-black/10 text-[11px]">
                 {(Object.entries(SORT_LABELS) as [string, string][]).map(([key, label]) => (
                   <button
                     key={key}
@@ -257,13 +295,13 @@ function SearchResults() {
         <div className="p-5 border-t border-black/10 bg-paper flex gap-2.5">
           <button
             onClick={clearFilters}
-            className="flex-1 py-3 rounded-full border border-black/10 text-[9px] tracking-widest uppercase hover:border-black/30 transition-colors"
+            className="flex-1 py-3 rounded-full border border-black/10 text-[10px] tracking-widest uppercase hover:border-black/30 transition-colors"
           >
             Clear All
           </button>
           <button
             onClick={() => setFilterOpen(false)}
-            className="flex-1 py-3 rounded-full bg-ink text-paper text-[9px] tracking-widest uppercase hover:bg-gray-900 transition-colors"
+            className="flex-1 py-3 rounded-full bg-ink text-paper text-[10px] tracking-widest uppercase hover:bg-gray-900 transition-colors"
           >
             Apply
           </button>

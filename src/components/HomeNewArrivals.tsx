@@ -13,25 +13,29 @@ function badgeFromTags(tags: string[]): string | undefined {
 }
 
 export function HomeNewArrivals() {
-  const products = useQuery(api.products.list, { tag: 'new' })
+  // Seed/catalogue data uses both "new" and "new-in" tags for the same
+  // concept, so match either rather than only the exact string "new".
+  const products = useQuery(api.products.list, {})
 
   if (products === undefined) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="aspect-[3/4] bg-neutral-100 animate-pulse" />
+          <div key={i} className="aspect-square bg-neutral-100 animate-pulse" />
         ))}
       </div>
     )
   }
 
-  const items = products.slice(0, 4)
+  const items = products
+    .filter(p => p.tags.includes('new') || p.tags.includes('new-in'))
+    .slice(0, 4)
 
   if (items.length === 0) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="aspect-[3/4] bg-neutral-100" />
+          <div key={i} className="aspect-square bg-neutral-100" />
         ))}
       </div>
     )

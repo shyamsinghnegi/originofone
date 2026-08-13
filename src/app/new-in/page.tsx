@@ -31,7 +31,7 @@ function toCard(p: NonNullable<ReturnType<typeof useQuery<typeof api.products.li
 }
 
 const SKELETON = [...Array(4)].map((_, i) => (
-  <div key={i} className="aspect-3/4 bg-neutral-100 animate-pulse" />
+  <div key={i} className="aspect-square bg-neutral-100 animate-pulse" />
 ))
 
 export default function NewInPage() {
@@ -56,9 +56,9 @@ export default function NewInPage() {
     <>
       <div style={{ paddingTop: 'var(--nav-height, 60px)' }}>
         {/* Hero */}
-        <div className="border-b border-neutral-200 px-6 md:px-10 py-14 md:py-20 grid md:grid-cols-2 items-end gap-6">
+        {/* <div className="border-b border-neutral-200 px-6 md:px-10 py-8 md:py-12 grid md:grid-cols-2 items-end gap-6">
           <div>
-            <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-3">Just Landed</p>
+            <p className="text-[11px] tracking-widest uppercase text-neutral-400 mb-3">Just Landed</p>
             <h1 className="font-serif text-5xl md:text-7xl text-black leading-[0.95]">New In</h1>
           </div>
           <div className="md:text-right">
@@ -66,35 +66,16 @@ export default function NewInPage() {
               The latest additions to the Origin of One collection. Designed for Canadian winters, built to last.
             </p>
           </div>
-        </div>
-
-        {/* Category filter strip */}
-        <div className="border-b border-neutral-200 px-6 md:px-10 flex gap-6 overflow-x-auto">
-          {[
-            { label: 'All',         href: '/new-in' },
-            { label: 'Men',         href: '/new-in#men' },
-            { label: 'Women',       href: '/new-in#women' },
-            { label: 'Accessories', href: '/new-in#accessories' },
-          ].map(cat => (
-            <Link
-              key={cat.label}
-              href={cat.href}
-              className="text-[10px] tracking-widest uppercase text-neutral-500 hover:text-black transition-colors py-4 whitespace-nowrap border-b-2 border-transparent hover:border-black"
-            >
-              {cat.label}
-            </Link>
-          ))}
-        </div>
+        </div> */}
 
         {/* Men */}
         {(loading || menDisplay.length > 0) && (
-          <section id="men" className="px-6 md:px-10 py-16 border-b border-neutral-200">
-            <div className="flex items-baseline justify-between mb-10">
+          <section id="men" className="px-6 md:px-10 py-10 border-b border-neutral-200 bg-neutral-50">
+            <div className="flex items-baseline justify-between mb-6">
               <div>
-                <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-2">New Arrivals</p>
                 <h2 className="font-serif text-3xl md:text-4xl text-black">Men</h2>
               </div>
-              <Link href="/collection" className="text-[10px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors">
+              <Link href="/collection" className="text-[11px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors">
                 View All Men →
               </Link>
             </div>
@@ -106,13 +87,12 @@ export default function NewInPage() {
 
         {/* Women */}
         {(loading || womenDisplay.length > 0) && (
-          <section id="women" className="px-6 md:px-10 py-16 border-b border-neutral-200">
-            <div className="flex items-baseline justify-between mb-10">
+          <section id="women" className="px-6 md:px-10 py-10 border-b border-neutral-200 bg-neutral-50">
+            <div className="flex items-baseline justify-between mb-6">
               <div>
-                <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-2">New Arrivals</p>
                 <h2 className="font-serif text-3xl md:text-4xl text-black">Women</h2>
               </div>
-              <Link href="/collection" className="text-[10px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors">
+              <Link href="/collection" className="text-[11px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors">
                 View All Women →
               </Link>
             </div>
@@ -123,10 +103,9 @@ export default function NewInPage() {
         )}
 
         {/* Accessories */}
-        <section id="accessories" className="px-6 md:px-10 py-16">
-          <div className="flex items-baseline justify-between mb-10">
+        <section id="accessories" className="px-6 md:px-10 py-10 bg-neutral-50">
+          <div className="flex items-baseline justify-between mb-6">
             <div>
-              <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-2">New Arrivals</p>
               <h2 className="font-serif text-3xl md:text-4xl text-black">Accessories</h2>
             </div>
           </div>
@@ -139,7 +118,7 @@ export default function NewInPage() {
           ) : (
             <div className="border border-dashed border-neutral-200 py-20 text-center">
               <p className="text-[13px] text-neutral-400 mb-4">New accessories dropping soon.</p>
-              <Link href="/collection" className="text-[10px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors">
+              <Link href="/collection" className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors">
                 Browse All →
               </Link>
             </div>

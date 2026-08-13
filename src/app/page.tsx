@@ -1,6 +1,9 @@
+'use client'
+
 import Link from 'next/link'
 import { MarqueeStrip, Footer } from '@/components/ui'
 import { HomeNewArrivals } from '@/components/HomeNewArrivals'
+import { HeroLogoLandedProvider, StickyHeroLogo, useLogoLanded } from '@/components/layout/StickyHeroLogo'
 
 const CATEGORIES = [
   { num: '01', label: 'Outerwear',   count: '24 styles' },
@@ -24,13 +27,17 @@ const SLIDES = HERO_SLIDES.length
 
 type SlideContent = { bg?: string; eyebrow: string; label: string; href: string; figure: string }
 
-function SlideInner({ content, index, total, isFirst, isRightSplit }: {
+function SlideInner({ content, index, total, isFirst, isRightSplit, isLastSlide }: {
   content: SlideContent
   index?: number
   total?: number
   isFirst?: boolean
   isRightSplit?: boolean
+  isLastSlide?: boolean
 }) {
+  const logoLanded = useLogoLanded()
+  const hideForLogo = isLastSlide && logoLanded
+
   return (
     <>
       {/* Grid texture */}
@@ -54,14 +61,27 @@ function SlideInner({ content, index, total, isFirst, isRightSplit }: {
         {content.eyebrow}
       </p>
 
-      <div style={{ position: 'absolute', bottom: 40, right: 24, zIndex: 2 }}>
+      <div
+        style={{
+          position: 'absolute', bottom: 40, right: 24, zIndex: 2,
+          opacity: hideForLogo ? 0 : 1,
+          transition: 'opacity 0.3s ease',
+          pointerEvents: hideForLogo ? 'none' : 'auto',
+        }}
+      >
         <Link href={content.href} style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 2 }}>
           {content.label} →
         </Link>
       </div>
 
       {!isRightSplit && index !== undefined && (
-        <p style={{ position: 'absolute', bottom: 40, left: 24, fontSize: 9, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', zIndex: 2 }}>
+        <p
+          style={{
+            position: 'absolute', bottom: 40, left: 24, fontSize: 9, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', zIndex: 2,
+            opacity: hideForLogo ? 0 : 1,
+            transition: 'opacity 0.3s ease',
+          }}
+        >
           {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
         </p>
       )}
@@ -79,51 +99,36 @@ function SlideInner({ content, index, total, isFirst, isRightSplit }: {
 export default function HomePage() {
   return (
     <>
+      <HeroLogoLandedProvider heroGridId="hero-grid">
       <div id="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', position: 'relative', zIndex: 10 }}>
 
         {/* Slides */}
         <div style={{ gridColumn: 1, gridRow: 1, zIndex: 10 }}>
           {HERO_SLIDES.map((slide: any, i) => {
+            const isLastSlide = i === HERO_SLIDES.length - 1
             if (slide.isSplit) {
               return (
                 <div key={i} className="flex flex-col md:flex-row" style={{ height: '100vh' }}>
                   <div className="relative flex-1 h-full border-b md:border-b-0 md:border-r border-white/10" style={{ background: slide.left.bg }}>
-                    <SlideInner content={slide.left} index={i} total={SLIDES} />
+                    <SlideInner content={slide.left} index={i} total={SLIDES} isLastSlide={isLastSlide} />
                   </div>
                   <div className="relative flex-1 h-full" style={{ background: slide.right.bg }}>
-                    <SlideInner content={slide.right} isRightSplit />
+                    <SlideInner content={slide.right} isRightSplit isLastSlide={isLastSlide} />
                   </div>
                 </div>
               )
             }
             return (
               <div key={i} className="relative" style={{ height: '100vh', background: slide.bg }}>
-                <SlideInner content={slide} index={i} total={SLIDES} isFirst={i === 0} />
+                <SlideInner content={slide} index={i} total={SLIDES} isFirst={i === 0} isLastSlide={isLastSlide} />
               </div>
             )
           })}
         </div>
 
-        {/* Sticky centred logo */}
-        <div style={{ gridColumn: 1, gridRow: 1, zIndex: 20, pointerEvents: 'none' }}>
-          <div style={{ position: 'sticky', top: 0, height: '100vh' }}>
-            <h1
-              className="font-serif text-white text-center leading-[0.88] tracking-tight select-none mix-blend-difference"
-              style={{
-                position: 'absolute',
-                left: 0, right: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                fontSize: 'clamp(2.5rem, 8vw, 8rem)',
-                whiteSpace: 'nowrap',
-                padding: '0 1rem',
-              }}
-            >
-              ORIGIN OF ONE
-            </h1>
-          </div>
-        </div>
+        <StickyHeroLogo />
       </div>
+      </HeroLogoLandedProvider>
 
       {/* Rest of page */}
       <div className="relative z-30 bg-paper">
@@ -133,20 +138,20 @@ export default function HomePage() {
           {CATEGORIES.map((cat, i) => (
             <Link key={cat.label} href="/collection" className={`group px-6 md:px-8 py-10 hover:bg-neutral-50 transition-colors duration-200 relative ${i < 3 ? 'border-r border-neutral-200' : ''}`}>
               <p className="font-serif text-5xl text-neutral-400 leading-none mb-4 group-hover:text-neutral-500 transition-colors">{cat.num}</p>
-              <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-1">{cat.label}</p>
+              <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-1">{cat.label}</p>
               <p className="text-[12px] text-neutral-400">{cat.count}</p>
               <span className="absolute bottom-6 right-6 text-neutral-400 group-hover:text-black group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-200 text-sm">↗</span>
             </Link>
           ))}
         </section>
 
-        <section className="px-6 md:px-10 py-20">
+        <section className="px-6 md:px-10 py-20 bg-neutral-50">
           <div className="flex items-baseline justify-between mb-10">
             <div>
-              <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-2">Just Landed</p>
+              <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-2">Just Landed</p>
               <h2 className="font-serif text-4xl md:text-5xl text-black">New Arrivals</h2>
             </div>
-            <Link href="/collection" className="text-[10px] tracking-widest uppercase text-neutral-500 hover:text-black transition-colors link-underline">View All →</Link>
+            <Link href="/collection" className="text-[11px] tracking-widest uppercase text-neutral-500 hover:text-black transition-colors link-underline">View All →</Link>
           </div>
           <HomeNewArrivals />
         </section>
@@ -160,7 +165,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex flex-col justify-center px-8 md:px-14 py-16 border-l border-neutral-200">
-            <p className="text-[10px] tracking-widest uppercase text-neutral-500 mb-6">Our philosophy</p>
+            <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-6">Our philosophy</p>
             <h2 className="font-serif text-4xl md:text-6xl leading-[1.05] mb-8 text-black">One piece.<br /><em>One story.</em></h2>
             <p className="text-[14px] text-neutral-500 leading-relaxed mb-4 max-w-[380px]">Every garment from OriginofOne is made with intention — no excess, no waste. Premium Canadian winter clothing that earns its place in your wardrobe for years, not seasons.</p>
             <p className="text-[14px] text-neutral-500 leading-relaxed mb-8 max-w-[380px]">We believe in buying less and wearing more.</p>
@@ -178,14 +183,14 @@ export default function HomePage() {
 
         <section className="bg-black text-white py-20 px-6 md:px-10">
           <div className="max-w-2xl mx-auto text-center">
-            <p className="text-[10px] tracking-widest uppercase text-white/40 mb-4">Stay in the loop</p>
+            <p className="text-[11px] tracking-widest uppercase text-white/40 mb-4">Stay in the loop</p>
             <h2 className="font-serif text-4xl md:text-5xl mb-4">Early access.<br /><em>No noise.</em></h2>
             <p className="text-[13px] text-white/50 mb-8">New arrivals, exclusive offers, and the occasional story about making things that last.</p>
             <div className="flex max-w-md mx-auto">
               <input type="email" placeholder="Your email address" className="flex-1 bg-transparent border border-white/20 px-4 py-3 text-[12px] outline-none placeholder:text-white/30 text-white focus:border-white/50 transition-colors" />
-              <button className="bg-white text-black text-[10px] tracking-widest uppercase px-6 py-3 hover:bg-neutral-100 transition-colors whitespace-nowrap">Subscribe</button>
+              <button className="bg-white text-black text-[11px] tracking-widest uppercase px-6 py-3 hover:bg-neutral-100 transition-colors whitespace-nowrap">Subscribe</button>
             </div>
-            <p className="text-[10px] text-white/30 mt-3">No spam. Unsubscribe anytime.</p>
+            <p className="text-[11px] text-white/30 mt-3">No spam. Unsubscribe anytime.</p>
           </div>
         </section>
 
