@@ -181,7 +181,10 @@ function StripeSteps({
         </button>
       </div>
       <p className="text-[11px] text-neutral-400 text-center mt-4">
-        By placing your order you agree to our Terms &amp; Privacy Policy.
+        By placing your order you agree to our{' '}
+        <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-black">Terms</a>
+        {' '}&amp;{' '}
+        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-black">Privacy Policy</a>.
       </p>
     </div>
       )}

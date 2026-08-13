@@ -264,8 +264,14 @@ export function Footer() {
         </div>
         <div>
           <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Help</p>
-          {['Sizing Guide', 'Shipping Info', 'Returns', 'FAQ', 'Contact'].map(l => (
-            <a key={l} href="#" className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{l}</a>
+          {[
+            ['Sizing Guide', '/sizing-guide'],
+            ['Shipping Info', '/shipping-returns'],
+            ['Returns', '/shipping-returns'],
+            ['FAQ', '/faq'],
+            ['Contact', '/contact'],
+          ].map(([label, href]) => (
+            <a key={label} href={href} className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{label}</a>
           ))}
         </div>
         <div>
@@ -277,7 +283,10 @@ export function Footer() {
       </div>
       <div className="border-t border-neutral-200 px-6 md:px-10 py-4 flex justify-between items-center">
         <span className="text-[11px] text-neutral-400">© 2025 Origin of One. Canada.</span>
-        <span className="text-[11px] text-neutral-400">Privacy · Terms</span>
+        <span className="text-[11px] text-neutral-400 flex gap-3">
+          <a href="/privacy" className="hover:text-black transition-colors">Privacy</a>
+          <a href="/terms" className="hover:text-black transition-colors">Terms</a>
+        </span>
       </div>
     </footer>
   )
