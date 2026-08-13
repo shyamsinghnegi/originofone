@@ -19,10 +19,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unsupported image type" }, { status: 400 });
   }
 
-  const result = await client.action(api.actions.r2.getPresignedUploadUrl, {
-    fileName,
-    contentType,
-  });
-
-  return NextResponse.json(result);
+  try {
+    const result = await client.action(api.actions.r2.getPresignedUploadUrl, {
+      fileName,
+      contentType,
+    });
+    return NextResponse.json(result);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 }

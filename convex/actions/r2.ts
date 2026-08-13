@@ -3,6 +3,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v } from "convex/values";
 import { action, internalAction } from "../_generated/server";
+import { api } from "../_generated/api";
 
 function getS3Client() {
   return new S3Client({
@@ -21,8 +22,8 @@ export const getPresignedUploadUrl = action({
     contentType: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
+    const isAdmin = await ctx.runQuery(api.users.isAdmin, {});
+    if (!isAdmin) throw new Error("Forbidden");
 
     const key = `products/${Date.now()}-${args.fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
     const client = getS3Client();
@@ -54,5 +55,25 @@ export const deleteImage = internalAction({
         Key: key,
       })
     );
+  },
+});
+
+// Admin-only, client-callable wrapper so the product form can remove an
+// uploaded image (e.g. when replacing or deleting a photo before saving).
+export const deleteProductImage = action({
+  args: { publicUrl: v.string() },
+  handler: async (ctx, args): Promise<null> => {
+    const isAdmin = await ctx.runQuery(api.users.isAdmin, {});
+    if (!isAdmin) throw new Error("Forbidden");
+    const base = process.env.CLOUDFLARE_R2_PUBLIC_URL!;
+    const key = args.publicUrl.replace(`${base}/`, "");
+    const client = getS3Client();
+    await client.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+        Key: key,
+      })
+    );
+    return null;
   },
 });
