@@ -3,13 +3,18 @@ import { DM_Serif_Display, DM_Sans } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import '../styles/globals.css'
 import { CartProvider } from '@/lib/cartContext'
+import { QuickAddProvider } from '@/lib/quickAddContext'
+import { ToastProvider } from '@/lib/toastContext'
 import { ConvexClerkProvider } from '@/lib/convexProvider'
 import { Nav } from '@/components/layout/Nav'
 import { PendingPaymentBanner } from '@/components/layout/PendingPaymentBanner'
 import { CartDrawer } from '@/components/layout/CartDrawer'
+import { QuickAddModal } from '@/components/layout/QuickAddModal'
+import { ToastStack } from '@/components/layout/ToastStack'
 import { SmoothScroll } from '@/components/layout/SmoothScroll'
 import { ZoomLock } from '@/components/layout/ZoomLock'
 import { UserSync } from '@/components/layout/UserSync'
+import { PageTransition } from '@/components/layout/PageTransition'
 
 const editorial = DM_Serif_Display({
   weight: ['400'],
@@ -44,13 +49,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body>
           <ConvexClerkProvider>
             <CartProvider>
-              <UserSync />
-              <ZoomLock />
-              <SmoothScroll />
-              <Nav />
-              <PendingPaymentBanner />
-              <CartDrawer />
-              <main>{children}</main>
+              <QuickAddProvider>
+                <ToastProvider>
+                  <UserSync />
+                  <ZoomLock />
+                  <SmoothScroll />
+                  <Nav />
+                  <PendingPaymentBanner />
+                  <CartDrawer />
+                  <QuickAddModal />
+                  <ToastStack />
+                  <main>
+                    <PageTransition>{children}</PageTransition>
+                  </main>
+                </ToastProvider>
+              </QuickAddProvider>
             </CartProvider>
           </ConvexClerkProvider>
         </body>

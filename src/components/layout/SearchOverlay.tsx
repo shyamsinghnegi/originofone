@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '@/../convex/_generated/api'
+import { useGsapPanel } from '@/lib/useGsapPanel'
+import { categoryToSlug } from '@/components/ProductGridPage'
 
 const CATEGORIES = ['Outerwear', 'Knitwear', 'Layering', 'Accessories']
 
@@ -16,8 +18,12 @@ interface Props {
 export function SearchOverlay({ isOpen, onClose }: Props) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
+
+  useGsapPanel(isOpen, panelRef, backdropRef, { from: 'top', duration: 0.3 })
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query), 280)
@@ -64,19 +70,21 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-[98] bg-black/30 backdrop-blur-[2px] transition-opacity duration-200 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        style={{ top: 'var(--nav-height, 60px)' }}
+        ref={backdropRef}
+        className="fixed inset-0 z-98 bg-black/30 backdrop-blur-[2px]"
+        style={{ top: 'var(--nav-height, 60px)', pointerEvents: isOpen ? 'auto' : 'none' }}
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Panel */}
       <div
+        ref={panelRef}
         role="dialog"
         aria-label="Search"
         aria-modal="true"
-        className={`fixed left-0 right-0 z-[99] bg-paper shadow-xl transition-all duration-200 ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-3 pointer-events-none'}`}
-        style={{ top: 'var(--nav-height, 60px)' }}
+        className="fixed left-0 right-0 z-99 bg-paper shadow-xl"
+        style={{ top: 'var(--nav-height, 60px)', pointerEvents: isOpen ? 'auto' : 'none' }}
       >
         {/* Input row */}
         <form onSubmit={handleSubmit} className="border-b border-border">
@@ -115,7 +123,7 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
-                  onClick={() => navigate(`/collection?category=${cat}`)}
+                  onClick={() => navigate(`/collection/${categoryToSlug(cat)}`)}
                   className="flex items-center justify-between w-full py-4 border-b border-border text-left group"
                 >
                   <span className="text-[13px] text-ink group-hover:text-muted transition-colors">{cat}</span>
@@ -168,7 +176,7 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
                     >
                       <div className="w-14 h-14 shrink-0 bg-neutral-100 overflow-hidden">
                         {p.images[0]
-                          ? <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                          ? <img src={p.images[0]} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                           : <div className="w-full h-full bg-neutral-200" />
                         }
                       </div>

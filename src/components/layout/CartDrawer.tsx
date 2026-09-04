@@ -1,16 +1,21 @@
 'use client'
 
+import { useRef } from 'react'
 import Link from 'next/link'
 import { useCart } from '@/lib/cartContext'
+import { useGsapPanel } from '@/lib/useGsapPanel'
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQty, total, count } = useCart()
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const drawerRef = useRef<HTMLDivElement>(null)
+  useGsapPanel(isOpen, drawerRef, overlayRef, { from: 'right' })
 
   return (
     <>
-      <div className={`cart-overlay ${isOpen ? 'open' : ''}`} onClick={closeCart} />
+      <div ref={overlayRef} className="cart-overlay" style={{ pointerEvents: isOpen ? 'auto' : 'none' }} onClick={closeCart} />
 
-      <div className={`cart-drawer ${isOpen ? 'open' : ''}`}>
+      <div ref={drawerRef} className="cart-drawer">
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
           <span className="text-[11px] tracking-widest uppercase">Your Bag ({count})</span>
           <button onClick={closeCart} className="text-muted hover:text-ink transition-colors" aria-label="Close">
