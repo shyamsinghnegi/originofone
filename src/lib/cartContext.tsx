@@ -32,7 +32,7 @@ interface CartContextType {
   isOpen: boolean
   openCart: () => void
   closeCart: () => void
-  addItem: (item: AddItemInput) => void
+  addItem: (item: AddItemInput, options?: { openDrawer?: boolean }) => void
   removeItem: (productId: string, color: string, size: string) => void
   updateQty: (productId: string, color: string, size: string, qty: number) => void
   total: number
@@ -68,9 +68,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const total = items.reduce((s, i) => s + i.price * i.qty, 0)
   const count = items.reduce((s, i) => s + i.qty, 0)
 
-  const addItem = (item: AddItemInput) => {
+  const addItem = (item: AddItemInput, options?: { openDrawer?: boolean }) => {
     const qty = item.qty ?? 1
     const image = item.image ?? ''
+    const openDrawer = options?.openDrawer ?? true
 
     if (isAuthenticated) {
       upsertItem({
@@ -100,7 +101,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return [...prev, { productId: item.productId, slug: item.slug, name: item.name, price: item.price, size: item.size, color: item.color, qty, image }]
       })
     }
-    setIsOpen(true)
+    if (openDrawer) setIsOpen(true)
   }
 
   const removeItem = (productId: string, color: string, size: string) => {

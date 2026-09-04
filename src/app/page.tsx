@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { MarqueeStrip, Footer } from '@/components/ui'
-import { HomeNewArrivals } from '@/components/HomeNewArrivals'
+import { HomeProductSection } from '@/components/HomeProductSection'
 import { HeroLogoLandedProvider, StickyHeroLogo, useLogoLanded } from '@/components/layout/StickyHeroLogo'
 
 const CATEGORIES = [
@@ -13,12 +13,12 @@ const CATEGORIES = [
 ]
 
 const HERO_SLIDES = [
-  { bg: '#0a0a0a', eyebrow: 'Est. Canada · Winter 2025',  label: 'SHOP COLLECTION', href: '/collection', figure: 'rgba(255,255,255,0.07)' },
-  { bg: '#111111', eyebrow: 'New Arrivals · Just Landed', label: 'NEW IN',           href: '/new-in',     figure: 'rgba(255,255,255,0.06)' },
+  { bg: '#0a0a0a', eyebrow: 'Est. Canada · Winter 2025',  label: 'SHOP COLLECTION', href: '/collection/all', figure: 'rgba(255,255,255,0.07)' },
+  { bg: '#111111', eyebrow: 'New Arrivals · Just Landed', label: 'NEW IN',           href: '/new-in',         figure: 'rgba(255,255,255,0.06)' },
   {
     isSplit: true,
-    left:  { bg: '#1a1a1a', eyebrow: 'Womenswear', label: 'SHOP WOMEN', href: '/collection', figure: 'rgba(255,255,255,0.08)' },
-    right: { bg: '#222222', eyebrow: 'Menswear',   label: 'SHOP MEN',   href: '/collection', figure: 'rgba(255,255,255,0.05)' },
+    left:  { bg: '#1a1a1a', eyebrow: 'Womenswear', label: 'SHOP WOMEN', href: '/collection/all', figure: 'rgba(255,255,255,0.08)' },
+    right: { bg: '#222222', eyebrow: 'Menswear',   label: 'SHOP MEN',   href: '/collection/all', figure: 'rgba(255,255,255,0.05)' },
   },
 ]
 
@@ -136,7 +136,7 @@ export default function HomePage() {
 
         <section className="grid grid-cols-2 md:grid-cols-4 border-b border-neutral-200">
           {CATEGORIES.map((cat, i) => (
-            <Link key={cat.label} href="/collection" className={`group px-6 md:px-8 py-10 hover:bg-neutral-50 transition-colors duration-200 relative ${i < 3 ? 'border-r border-neutral-200' : ''}`}>
+            <Link key={cat.label} href={`/collection/${cat.label.toLowerCase()}`} className={`group px-6 md:px-8 py-10 hover:bg-neutral-50 transition-colors duration-200 relative ${i < 3 ? 'border-r border-neutral-200' : ''}`}>
               <p className="font-serif text-5xl text-neutral-400 leading-none mb-4 group-hover:text-neutral-500 transition-colors">{cat.num}</p>
               <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-1">{cat.label}</p>
               <p className="text-[12px] text-neutral-400">{cat.count}</p>
@@ -145,16 +145,30 @@ export default function HomePage() {
           ))}
         </section>
 
-        <section className="px-6 md:px-10 py-20 bg-neutral-50">
-          <div className="flex items-baseline justify-between mb-10">
-            <div>
-              <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-2">Just Landed</p>
-              <h2 className="font-serif text-4xl md:text-5xl text-black">New Arrivals</h2>
-            </div>
-            <Link href="/collection" className="text-[11px] tracking-widest uppercase text-neutral-500 hover:text-black transition-colors link-underline">View All →</Link>
-          </div>
-          <HomeNewArrivals />
-        </section>
+        <HomeProductSection
+          eyebrow="Just Landed"
+          title="New Arrivals"
+          viewAllHref="/new-in"
+          filter={p => p.tags.includes('new') || p.tags.includes('new-in')}
+        />
+        <HomeProductSection
+          eyebrow="Cold-Weather Essentials"
+          title="Outerwear"
+          viewAllHref="/collection/outerwear"
+          filter={p => p.category === 'Outerwear'}
+        />
+        <HomeProductSection
+          eyebrow="Finishing Touches"
+          title="Accessories"
+          viewAllHref="/collection/accessories"
+          filter={p => p.category === 'Accessories'}
+        />
+        <HomeProductSection
+          eyebrow="Layer Up"
+          title="Knitwear & Layering"
+          viewAllHref="/collection/knitwear"
+          filter={p => p.category === 'Knitwear' || p.category === 'Layering'}
+        />
 
         <section className="grid md:grid-cols-2 border-t border-neutral-200">
           <div className="min-h-[60vh] md:min-h-[80vh] flex items-end justify-center pb-10" style={{ background: '#000' }}>
