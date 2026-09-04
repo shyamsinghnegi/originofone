@@ -21,7 +21,7 @@ export default function CartPage() {
             {items.length === 0 ? (
               <div className="py-20 text-center">
                 <p className="font-serif text-2xl mb-6 text-muted">Your bag is empty.</p>
-                <Link href="/collection" className="text-[11px] tracking-widest uppercase border-b border-ink pb-0.5 hover:text-muted hover:border-muted transition-colors">
+                <Link href="/collection/all" className="text-[11px] tracking-widest uppercase border-b border-ink pb-0.5 hover:text-muted hover:border-muted transition-colors">
                   Continue Shopping →
                 </Link>
               </div>
@@ -100,7 +100,7 @@ export default function CartPage() {
             <Link href="/checkout" className="block w-full bg-ink text-paper text-[11px] tracking-widest uppercase text-center py-4 hover:bg-gray-900 transition-colors mb-3">
               Proceed to Checkout →
             </Link>
-            <Link href="/collection" className="block w-full border border-border text-[11px] tracking-widest uppercase text-center py-3 text-muted hover:border-ink hover:text-ink transition-colors">
+            <Link href="/collection/all" className="block w-full border border-border text-[11px] tracking-widest uppercase text-center py-3 text-muted hover:border-ink hover:text-ink transition-colors">
               Continue Shopping
             </Link>
             <div className="mt-6 space-y-2">

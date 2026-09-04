@@ -1,16 +1,30 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useQuery } from 'convex/react'
-import { api } from '@/../convex/_generated/api'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ProductCard, MarqueeStrip, Footer, COLOR_MAP, BRAND_COLORS } from '@/components/ui'
 import { useGsapPanel } from '@/lib/useGsapPanel'
 
-const CATEGORIES = ['All', 'Outerwear', 'Knitwear', 'Layering', 'Accessories']
+export const CATEGORIES = ['All', 'Outerwear', 'Knitwear', 'Layering', 'Accessories']
+
+export function categoryToSlug(category: string): string {
+  return category === 'All' ? 'all' : category.toLowerCase()
+}
 const SIZES = ['XXXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 const FABRICS = ['Wool', 'Cashmere', 'Merino', 'Cotton', 'Down', 'Leather', 'Synthetic']
 const OTHER_COLORS = Object.keys(COLOR_MAP).filter(c => !BRAND_COLORS.includes(c))
+
+type Product = {
+  _id: string
+  slug: string
+  name: string
+  price: number
+  compareAtPrice?: number
+  category: string
+  fabric?: string
+  tags: string[]
+  images: string[]
+  variants: { color: string; size: string; stock: number }[]
+}
 
 function badgeFromTags(tags: string[]): string | undefined {
   if (tags.includes('new') || tags.includes('new-in')) return 'New'
@@ -21,57 +35,39 @@ function badgeFromTags(tags: string[]): string | undefined {
 }
 
 const SORT_LABELS: Record<string, string> = {
-  new: 'Date, new to old',
-  old: 'Date, old to new',
-  'price-asc': 'Price, low to high',
-  'price-desc': 'Price, high to low',
+  new: 'Date, new to old', old: 'Date, old to new',
+  'price-asc': 'Price, low to high', 'price-desc': 'Price, high to low',
 }
 
-function SearchResults() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const initialQ = searchParams.get('q') ?? ''
+interface Props {
+  products: Product[] | undefined
+  title: string
+  /** Show the category pill row + drawer category section. Off for pages already scoped to one thing (e.g. a single-category collection page with no need to switch). */
+  showCategoryFilter?: boolean
+  activeCategory?: string
+  onCategoryChange?: (c: string) => void
+  skeletonCount?: number
+}
 
-  const [inputValue, setInputValue] = useState(initialQ)
-  const [activeCategory, setActiveCategory] = useState('All')
+export function ProductGridPage({
+  products, title, showCategoryFilter = true,
+  activeCategory = 'All', onCategoryChange, skeletonCount = 12,
+}: Props) {
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [sortByOpen, setSortByOpen] = useState(false)
+  const [sort, setSort] = useState<'new' | 'old' | 'price-asc' | 'price-desc'>('new')
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>([])
   const [availability, setAvailability] = useState<'in-stock' | 'out-of-stock' | null>(null)
-  const [sort, setSort] = useState<'new' | 'old' | 'price-asc' | 'price-desc'>('new')
-  const [filterOpen, setFilterOpen] = useState(false)
-  const [sortByOpen, setSortByOpen] = useState(false)
   const filterBackdropRef = useRef<HTMLDivElement>(null)
   const filterPanelRef = useRef<HTMLDivElement>(null)
   useGsapPanel(filterOpen, filterPanelRef, filterBackdropRef, { from: 'right' })
-
-  // Sync inputValue when URL changes
-  useEffect(() => { setInputValue(initialQ) }, [initialQ])
 
   useEffect(() => {
     document.body.style.overflow = filterOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [filterOpen])
-
-  const results = useQuery(
-    api.products.search,
-    initialQ.trim().length >= 2 ? { query: initialQ.trim() } : 'skip'
-  )
-
-  const filtered = useMemo(() => {
-    const list = results ?? []
-    let out = [...list]
-    if (activeCategory !== 'All') out = out.filter(p => p.category === activeCategory)
-    if (selectedSizes.length > 0) out = out.filter(p => p.variants.some(v => selectedSizes.includes(v.size)))
-    if (selectedColors.length > 0) out = out.filter(p => p.variants.some(v => selectedColors.includes(v.color)))
-    if (selectedFabrics.length > 0) out = out.filter(p => p.fabric && selectedFabrics.includes(p.fabric))
-    if (availability === 'in-stock') out = out.filter(p => p.variants.some(v => v.stock > 0))
-    else if (availability === 'out-of-stock') out = out.filter(p => p.variants.every(v => v.stock <= 0))
-    if (sort === 'price-asc') out.sort((a, b) => a.price - b.price)
-    else if (sort === 'price-desc') out.sort((a, b) => b.price - a.price)
-    else if (sort === 'old') out.reverse()
-    return out
-  }, [results, activeCategory, selectedSizes, selectedColors, selectedFabrics, availability, sort])
 
   const toggleSize = (s: string) =>
     setSelectedSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
@@ -82,66 +78,43 @@ function SearchResults() {
   const toggleAvailability = (a: 'in-stock' | 'out-of-stock') =>
     setAvailability(prev => prev === a ? null : a)
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputValue.trim()) return
-    router.push(`/search?q=${encodeURIComponent(inputValue.trim())}`)
-    setActiveCategory('All')
+  const clearFilters = () => {
+    onCategoryChange?.('All')
     setSelectedSizes([])
     setSelectedColors([])
     setSelectedFabrics([])
     setAvailability(null)
   }
 
-  const clearFilters = () => {
-    setActiveCategory('All')
-    setSelectedSizes([])
-    setSelectedColors([])
-    setSelectedFabrics([])
-    setAvailability(null)
-  }
+  const filtered = useMemo(() => {
+    if (!products) return []
+    let list = [...products]
+    if (showCategoryFilter && activeCategory !== 'All') list = list.filter(p => p.category === activeCategory)
+    if (selectedSizes.length > 0)
+      list = list.filter(p => p.variants.some(v => selectedSizes.includes(v.size)))
+    if (selectedColors.length > 0)
+      list = list.filter(p => p.variants.some(v => selectedColors.includes(v.color)))
+    if (selectedFabrics.length > 0)
+      list = list.filter(p => p.fabric && selectedFabrics.includes(p.fabric))
+    if (availability === 'in-stock')
+      list = list.filter(p => p.variants.some(v => v.stock > 0))
+    else if (availability === 'out-of-stock')
+      list = list.filter(p => p.variants.every(v => v.stock <= 0))
+    if (sort === 'price-asc') list.sort((a, b) => a.price - b.price)
+    else if (sort === 'price-desc') list.sort((a, b) => b.price - a.price)
+    else if (sort === 'old') list.reverse()
+    return list
+  }, [products, showCategoryFilter, activeCategory, selectedSizes, selectedColors, selectedFabrics, availability, sort])
 
   return (
     <>
       <div style={{ paddingTop: 'var(--nav-height, 60px)' }}>
-        {/* Header */}
-        <div className="px-6 md:px-12 py-6 border-b border-border">
-          {/* Inline search bar */}
-          <form onSubmit={handleSearch} className="flex items-center gap-3 max-w-xl border-b border-black pb-2">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              placeholder="Search products…"
-              className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted text-ink"
-              autoComplete="off"
-            />
-            {inputValue && (
-              <button type="button" onClick={() => setInputValue('')} className="text-muted hover:text-ink transition-colors">
-                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            )}
-            <button type="submit" aria-label="Submit search" className="text-muted hover:text-ink transition-colors">
-              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.3" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </button>
-          </form>
-        </div>
-
         {/* Filter strip */}
         <div className="sticky top-15 z-30 bg-paper/90 backdrop-blur-md py-3 w-full border-b border-black/5">
           <div className="flex items-center justify-between px-6 md:px-12 w-full">
             <div className="text-[11px] md:text-[11px] font-medium tracking-widest uppercase text-ink">
-              {!initialQ
-                ? 'Enter a search term'
-                : (activeCategory === 'All' ? 'All Results' : activeCategory)}
-              {initialQ && results !== undefined && ` · ${filtered.length}`}
-              {selectedSizes.length > 0 && ` · ${selectedSizes.join(', ')}`}
-              {selectedColors.length > 0 && ` · ${selectedColors.join(', ')}`}
-              {selectedFabrics.length > 0 && ` · ${selectedFabrics.join(', ')}`}
+              {title}
+              {products !== undefined && ` · ${filtered.length}`}
             </div>
             <button
               onClick={() => setFilterOpen(true)}
@@ -149,7 +122,7 @@ function SearchResults() {
               className="px-4 py-2 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-black/5 text-[11px] md:text-[11px] text-ink hover:bg-neutral-50 transition-all whitespace-nowrap flex items-center gap-2 font-medium"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 2h8" /><path d="M9 2v4.5L6 11v11h12V11l-3-4.5V2" /><path d="M6 11h12" />
+                <path d="M8 2h8"/><path d="M9 2v4.5L6 11v11h12V11l-3-4.5V2"/><path d="M6 11h12"/>
               </svg>
               Filters
             </button>
@@ -157,13 +130,13 @@ function SearchResults() {
         </div>
 
         {/* Category pills */}
-        {initialQ && (
+        {showCategoryFilter && onCategoryChange && (
           <div className="px-6 md:px-12 py-4 bg-neutral-200 border-b border-black/5 overflow-x-auto" data-lenis-prevent="true">
             <div className="flex gap-2 w-max">
               {CATEGORIES.map(c => (
                 <button
                   key={c}
-                  onClick={() => setActiveCategory(c)}
+                  onClick={() => onCategoryChange(c)}
                   className={`px-4 h-8 rounded-full text-[12px] whitespace-nowrap transition-colors ${
                     activeCategory === c ? 'bg-ink text-paper' : 'bg-white border border-black/10 text-ink hover:border-black/30'
                   }`}
@@ -175,15 +148,11 @@ function SearchResults() {
           </div>
         )}
 
-        {/* Grid */}
+        {/* Products grid */}
         <div className="px-6 md:px-12 py-8 min-h-screen bg-neutral-200">
-          {!initialQ ? (
-            <div className="py-24 text-center">
-              <p className="font-serif text-2xl text-neutral-400">Start typing to search.</p>
-            </div>
-          ) : results === undefined ? (
+          {products === undefined ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-1 gap-y-6 md:gap-x-2 md:gap-y-8">
-              {[...Array(8)].map((_, i) => (
+              {[...Array(skeletonCount)].map((_, i) => (
                 <div key={i}>
                   <div className="aspect-3/4 rounded-xl bg-neutral-300 animate-pulse mb-2" />
                   <div className="h-3 w-3/4 rounded bg-neutral-300 animate-pulse mb-1.5" />
@@ -193,7 +162,7 @@ function SearchResults() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-24 text-center">
-              <p className="font-serif text-2xl text-neutral-400 mb-4">No results found.</p>
+              <p className="font-serif text-2xl text-neutral-400 mb-4">No products found.</p>
               <button onClick={clearFilters} className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5">
                 Clear Filters
               </button>
@@ -228,30 +197,34 @@ function SearchResults() {
       <div ref={filterPanelRef} className="fixed top-0 right-0 h-full w-105 max-w-[100vw] bg-paper z-201 flex flex-col" style={{ pointerEvents: filterOpen ? 'auto' : 'none' }}>
         <div className="flex flex-col items-center justify-center py-4 border-b border-black/10 relative">
           <h2 className="text-[11px] font-medium tracking-widest uppercase mb-0.5">Filter & Sort</h2>
-          <p className="text-[10px] text-muted">{filtered.length} Results</p>
+          <p className="text-[10px] text-muted">{filtered.length} Products</p>
           <button onClick={() => setFilterOpen(false)} className="absolute right-5 top-1/2 -translate-y-1/2 p-2 -mr-2 text-muted hover:text-ink transition-colors">
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1" viewBox="0 0 24 24">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-7" data-lenis-prevent="true">
-          <div>
-            <h3 className="text-[11px] mb-2.5 text-ink font-medium">Category</h3>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map(c => (
-                <button
-                  key={c}
-                  onClick={() => setActiveCategory(c)}
-                  className={`px-4 h-7 rounded-full text-[11px] transition-colors ${activeCategory === c ? 'bg-ink text-paper' : 'bg-black/5 text-ink hover:bg-black/10'}`}
-                >
-                  {c}
-                </button>
-              ))}
+          {/* Category */}
+          {showCategoryFilter && onCategoryChange && (
+            <div>
+              <h3 className="text-[11px] mb-2.5 text-ink font-medium">Category</h3>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => onCategoryChange(c)}
+                    className={`px-4 h-7 rounded-full text-[11px] transition-colors ${activeCategory === c ? 'bg-ink text-paper' : 'bg-black/5 text-ink hover:bg-black/10'}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
+          {/* Size */}
           <div>
             <h3 className="text-[11px] mb-2.5 text-ink font-medium">Size</h3>
             <div className="flex flex-wrap gap-2">
@@ -267,6 +240,7 @@ function SearchResults() {
             </div>
           </div>
 
+          {/* Color — brand palette featured first, then the broader set */}
           <div>
             <h3 className="text-[11px] mb-2.5 text-ink font-medium">Origin of One Palette</h3>
             <div className="flex flex-col gap-2 mb-4">
@@ -304,6 +278,7 @@ function SearchResults() {
             </div>
           </div>
 
+          {/* Fabric Type */}
           <div>
             <h3 className="text-[11px] mb-2.5 text-ink font-medium">Fabric Type</h3>
             <div className="flex flex-wrap gap-2">
@@ -319,6 +294,7 @@ function SearchResults() {
             </div>
           </div>
 
+          {/* Availability */}
           <div>
             <h3 className="text-[11px] mb-2.5 text-ink font-medium">Availability</h3>
             <div className="flex flex-wrap gap-2">
@@ -337,6 +313,7 @@ function SearchResults() {
             </div>
           </div>
 
+          {/* Sort */}
           <div className="border-t border-black/10 pt-6">
             <button onClick={() => setSortByOpen(v => !v)} className="flex justify-between items-center w-full text-[11px]">
               <span className="text-ink font-medium">Sort by</span>
@@ -382,21 +359,5 @@ function SearchResults() {
       <MarqueeStrip items={['Free Returns', '·', 'Ships Across Canada', '·', 'Ethically Sourced', '·', 'Premium Materials']} />
       <Footer />
     </>
-  )
-}
-
-export default function SearchPage() {
-  return (
-    <Suspense fallback={
-      <div className="px-6 md:px-12 py-8 min-h-screen bg-neutral-200" style={{ paddingTop: 'var(--nav-height, 60px)' }}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-1 gap-y-6 md:gap-x-2 md:gap-y-8">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="aspect-3/4 rounded-xl bg-neutral-300 animate-pulse" />
-          ))}
-        </div>
-      </div>
-    }>
-      <SearchResults />
-    </Suspense>
   )
 }

@@ -274,7 +274,7 @@ export default function AccountPage() {
               {orders?.length === 0 && (
                 <div className="py-16 text-center border border-dashed border-neutral-200">
                   <p className="font-serif text-2xl text-neutral-400 mb-4">No orders yet.</p>
-                  <button onClick={() => router.push('/collection')} className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors">
+                  <button onClick={() => router.push('/collection/all')} className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors">
                     Browse Collection →
                   </button>
                 </div>

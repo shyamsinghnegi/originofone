@@ -141,7 +141,7 @@ function ConfirmationContent() {
             {/* CTAs */}
             <div className="flex gap-3">
               <Link
-                href="/collection"
+                href="/collection/all"
                 className="flex-1 bg-black text-white text-[11px] tracking-widest uppercase text-center py-4 hover:bg-neutral-900 transition-colors"
               >
                 Continue Shopping
@@ -162,10 +162,10 @@ function ConfirmationContent() {
         <div className="flex justify-between items-baseline mb-8">
           <h2 className="font-serif text-3xl text-black">You Might Also Like</h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-          <ProductCard id="merino-knit-sweater"  name="Merino Knit Sweater"  price={168} bg="#ebebeb" />
-          <ProductCard id="cashmere-scarf"        name="Cashmere Scarf"       price={88}  bg="#e5e5e5" />
-          <ProductCard id="heritage-wool-coat"    name="Heritage Wool Coat"   price={398} bg="#d4d4d4" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-1 gap-y-6 md:gap-x-2 md:gap-y-8">
+          <ProductCard id="merino-knit-sweater"  name="Merino Knit Sweater"  price={168} />
+          <ProductCard id="cashmere-scarf"        name="Cashmere Scarf"       price={88} />
+          <ProductCard id="heritage-wool-coat"    name="Heritage Wool Coat"   price={398} />
         </div>
       </section>
     </div>

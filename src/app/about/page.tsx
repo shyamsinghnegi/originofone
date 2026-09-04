@@ -132,7 +132,7 @@ export default function AboutPage() {
           Ready to shop<br /><em>differently?</em>
         </h2>
         <Link
-          href="/collection"
+          href="/collection/all"
           className="inline-block bg-black text-white text-[11px] tracking-widest uppercase px-10 py-4 hover:bg-neutral-900 transition-colors"
         >
           Shop the Collection →

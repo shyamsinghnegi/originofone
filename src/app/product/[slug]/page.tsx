@@ -6,6 +6,7 @@ import { useQuery } from 'convex/react'
 import { api } from '@/../convex/_generated/api'
 import { useCart } from '@/lib/cartContext'
 import { ProductCard, Footer, COLOR_MAP, COLOR_TO_BG } from '@/components/ui'
+import { categoryToSlug } from '@/components/ProductGridPage'
 
 const STATIC_ACCORDION = [
   {
@@ -83,8 +84,38 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
   // Loading state
   if (product === undefined) {
     return (
-      <div className="pt-15 min-h-screen flex items-center justify-center">
-        <div className="w-5 h-5 border border-neutral-300 border-t-black rounded-full animate-spin" />
+      <div className="pt-15 min-h-screen">
+        <div className="px-6 md:px-10 py-3 border-b border-border">
+          <div className="h-3 w-40 rounded bg-neutral-100 animate-pulse" />
+        </div>
+        <div className="grid md:grid-cols-2 min-h-[85vh]">
+          <div className="border-r border-border">
+            <div className="aspect-4/5 bg-neutral-100 animate-pulse" />
+            <div className="grid grid-cols-4 border-t border-border">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="aspect-square border-r last:border-r-0 border-border bg-neutral-50 animate-pulse" />
+              ))}
+            </div>
+          </div>
+          <div className="px-8 md:px-12 py-10">
+            <div className="h-3 w-24 rounded bg-neutral-100 animate-pulse mb-4" />
+            <div className="h-10 w-3/4 rounded bg-neutral-100 animate-pulse mb-6" />
+            <div className="h-6 w-28 rounded bg-neutral-100 animate-pulse mb-8 pb-5 border-b border-border" />
+            <div className="h-3 w-16 rounded bg-neutral-100 animate-pulse mb-3" />
+            <div className="flex gap-2.5 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="w-7 h-7 rounded-full bg-neutral-100 animate-pulse" />
+              ))}
+            </div>
+            <div className="h-3 w-12 rounded bg-neutral-100 animate-pulse mb-3" />
+            <div className="grid grid-cols-5 gap-1.5 mb-8">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-11 rounded bg-neutral-100 animate-pulse" />
+              ))}
+            </div>
+            <div className="h-13 rounded bg-neutral-100 animate-pulse" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -94,7 +125,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     return (
       <div className="pt-15 min-h-screen flex flex-col items-center justify-center gap-4">
         <p className="font-serif text-3xl text-neutral-400">Product not found.</p>
-        <Link href="/collection" className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5">Browse Collection →</Link>
+        <Link href="/collection/all" className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5">Browse Collection →</Link>
       </div>
     )
   }
@@ -106,7 +137,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
   const images = product.images.length > 0 ? product.images : null
   const firstColor = effectiveColor
-  const bgColor = COLOR_TO_BG[firstColor] ?? '#e8e8e8'
+  const bgColor = COLOR_TO_BG[firstColor] ?? '#d8d8d8'
   const thumbBgs = images ? images : [bgColor, '#d4d4d4', '#e0e0e0', '#cccccc']
 
   return (
@@ -116,7 +147,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
         <div className="px-6 md:px-10 py-3 border-b border-border text-[11px] text-muted">
           <Link href="/" className="hover:text-ink transition-colors">Home</Link>
           <span className="mx-2">/</span>
-          <Link href="/collection" className="hover:text-ink transition-colors">{product.category}</Link>
+          <Link href={`/collection/${categoryToSlug(product.category)}`} className="hover:text-ink transition-colors">{product.category}</Link>
           <span className="mx-2">/</span>
           {product.name}
         </div>
@@ -156,7 +187,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 >
                   {images && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={src as string} alt="" className="w-full h-full object-cover" />
+                    <img src={src as string} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   )}
                   {activeImage === i && <div className="absolute inset-0 border-2 border-ink pointer-events-none" />}
                 </button>
@@ -282,26 +313,22 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           <section className="px-6 md:px-10 py-16 border-t border-border">
             <div className="flex justify-between items-baseline mb-8">
               <h2 className="font-serif text-3xl md:text-4xl">You May Also Like</h2>
-              <Link href="/collection" className="text-[11px] tracking-widest uppercase text-muted hover:text-ink transition-colors link-underline">View All →</Link>
+              <Link href={`/collection/${categoryToSlug(product.category)}`} className="text-[11px] tracking-widest uppercase text-muted hover:text-ink transition-colors link-underline">View All →</Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {(related ?? []).map(p => {
-                const colors = [...new Set(p.variants.map(v => v.color))]
-                const firstC = colors[0]
-                return (
-                  <ProductCard
-                    key={p._id}
-                    id={p.slug}
-                    name={p.name}
-                    price={p.price}
-                    originalPrice={p.compareAtPrice}
-                    badge={badgeFromTags(p.tags)}
-                    colors={colors.map(c => COLOR_MAP[c] ?? '#cccccc')}
-                    bg={COLOR_TO_BG[firstC] ?? '#e8e8e8'}
-                    image={p.images[0]}
-                  />
-                )
-              })}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-1 gap-y-6 md:gap-x-2 md:gap-y-8">
+              {(related ?? []).map(p => (
+                <ProductCard
+                  key={p._id}
+                  id={p.slug}
+                  productId={p._id}
+                  name={p.name}
+                  price={p.price}
+                  originalPrice={p.compareAtPrice}
+                  badge={badgeFromTags(p.tags)}
+                  image={p.images[0]}
+                  variants={p.variants}
+                />
+              ))}
             </div>
           </section>
         )}

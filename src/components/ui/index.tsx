@@ -2,6 +2,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useQuickAdd } from '@/lib/quickAddContext'
 
 
 interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -50,7 +51,20 @@ export function MarqueeStrip({ items }: { items: string[] }) {
 }
 
 // ── Colour helpers (exported for pages) ─────────────────
+// The first 5 are the brand's signature palette (from the Origin of One
+// moodboard — "washed"/"lived-in" earth tones, not synthetic saturated
+// colors). Everything after is a broader generic palette kept available for
+// products outside the core line. Card backgrounds (COLOR_TO_BG) are a
+// separate, bolder palette — graphic panel colors, not muted tints.
+export const BRAND_COLORS = ['Charcoal Black', 'Off-White / Bone', 'Concrete Grey', 'Dry Olive', 'Washed Sand']
+
 export const COLOR_MAP: Record<string, string> = {
+  'Charcoal Black': '#2a2a28',
+  'Off-White / Bone': '#e8e3d8',
+  'Concrete Grey': '#9b9a94',
+  'Dry Olive': '#6b6a54',
+  'Washed Sand': '#d6cebe',
+
   'Black': '#0a0a0a',
   'Charcoal': '#3d3d3d',
   'Stone Grey': '#8a8278',
@@ -69,36 +83,64 @@ export const COLOR_MAP: Record<string, string> = {
   'Tan': '#c4a882',
 }
 
+// Complementary/contrasting panel colors — chosen to make the garment pop
+// against its card background (color-wheel opposites or high-contrast
+// neutrals), not a tinted shade of the garment's own color. Bright/light
+// shades, not deep saturated blocks — closer to a pastel backdrop.
 export const COLOR_TO_BG: Record<string, string> = {
-  'Black': '#d4d4d4',
-  'Charcoal': '#cccccc',
-  'Stone Grey': '#e5e5e5',
-  'Light Grey': '#ebebeb',
-  'Dark Grey': '#d8d8d8',
-  'Camel': '#e8e0d8',
-  'White': '#f5f5f5',
-  'Cream': '#ede8e2',
-  'Ivory': '#f0ece6',
-  'Navy': '#d0d4dc',
-  'Forest': '#d4dcd8',
-  'Burgundy': '#dcd0d0',
-  'Taupe': '#e4deda',
-  'Sand': '#e8e0d4',
-  'Smoke': '#dcdcdc',
-  'Tan': '#e4d8cc',
+  'Charcoal Black': '#f0c4a8',   // near-black garment → warm peach pop
+  'Off-White / Bone': '#b8d4ec', // warm neutral garment → light sky blue
+  'Concrete Grey': '#e8c9a0',    // cool grey → warm sand
+  'Dry Olive': '#e0b8d4',        // olive (yellow-green) → light orchid
+  'Washed Sand': '#a8d4dc',      // warm sand → light teal
+
+  'Black': '#f4b8a0',            // black garment → light terracotta
+  'Charcoal': '#f0cc94',         // dark neutral → light amber
+  'Stone Grey': '#dcb8d0',       // cool-warm grey → light plum
+  'Light Grey': '#b8c0e8',       // light neutral → light periwinkle
+  'Dark Grey': '#f0bca0',        // dark neutral → light rust
+  'Camel': '#a8d8e0',            // warm tan → light teal
+  'White': '#a8c4f0',            // white garment → bright light blue
+  'Cream': '#b0c0ec',            // warm cream → light powder blue
+  'Ivory': '#b8ccec',            // warm ivory → light slate-blue
+  'Navy': '#f0cc94',             // blue garment → light amber (true complement)
+  'Forest': '#f0b8cc',           // green garment → light pink (true complement)
+  'Burgundy': '#a8e0cc',         // red garment → light mint (true complement)
+  'Taupe': '#a8ccec',            // warm taupe → light blue
+  'Sand': '#b0c8ec',             // warm sand → light blue
+  'Smoke': '#ecc8a0',            // neutral grey → light tan
+  'Tan': '#a8c0e0',              // warm tan → light periwinkle
+}
+
+// ── Studio backdrops ─────────────────────────────────────
+// Two fixed photography-style backdrops used behind products with no real
+// photo yet, instead of a computed per-garment tint — a flat color block
+// reads worse than a consistent studio look, same idea as a real shoot
+// reusing the same backdrop across a whole product line.
+const STUDIO_BACKDROPS = [
+  // Deep teal-blue spotlight studio — dark, needs a light figure tint
+  { bg: 'radial-gradient(ellipse 140% 90% at 50% 105%, #2a6b78 0%, #163f4d 45%, #0d2530 100%)', figureTint: 'rgba(255,255,255,0.3)' },
+  // Soft cloudy sky-blue studio — light, needs a dark figure tint
+  { bg: 'linear-gradient(160deg, #cfe0ea 0%, #a9c7d8 50%, #8fb4c9 100%)', figureTint: 'rgba(0,0,0,0.18)' },
+]
+
+function studioBackdropFor(seed: string): typeof STUDIO_BACKDROPS[number] {
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0
+  return STUDIO_BACKDROPS[Math.abs(hash) % STUDIO_BACKDROPS.length]
 }
 
 // ── Product card ─────────────────────────────────────────
 interface ProductCardProps {
   id: string
+  productId?: string
   name: string
   price: number
   originalPrice?: number
   badge?: string
-  colors?: string[]
-  bg?: string
   slides?: string[]
   image?: string
+  variants?: { color: string; size: string; stock: number }[]
 }
 
 // Placeholder figure rendered inside each slide
@@ -114,12 +156,20 @@ function PlaceholderFigure({ tint }: { tint: string }) {
   )
 }
 
-export function ProductCard({ id, name, price, originalPrice, badge, colors, bg = '#e8e8e8', slides, image }: ProductCardProps) {
+export function ProductCard({ id, productId, name, price, originalPrice, badge, slides, image, variants }: ProductCardProps) {
   const [imgIndex, setImgIndex] = useState(0)
   const [hovered,  setHovered]  = useState(false)
+  const quickAdd = useQuickAdd()
 
-  const slideBgs: string[] = slides ?? [bg, lighten(bg, 12), darken(bg, 10)]
-  const total = image ? 1 : slideBgs.length
+  function handleQuickAdd(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!productId || !variants || variants.length === 0) return
+    quickAdd.open({ productId, slug: id, name, price, originalPrice, image, variants })
+  }
+
+  const slideBgs: string[] = slides ?? []
+  const total = image ? 1 : Math.max(slideBgs.length, 1)
 
   const prev = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -130,21 +180,22 @@ export function ProductCard({ id, name, price, originalPrice, badge, colors, bg 
     setImgIndex(i => (i + 1) % total)
   }
 
-  const currentBg = slideBgs[imgIndex]
-  const figureTint = 'rgba(0,0,0,0.16)'
+  const studio = studioBackdropFor(id)
+  const currentBg = slideBgs[imgIndex] ?? studio.bg
+  const figureTint = studio.figureTint
 
   return (
     <Link href={`/product/${id}`} className="group block">
       {/* ── Card image area ── */}
       <div
-        className="aspect-square relative overflow-hidden mb-2 transition-colors duration-500"
-        style={{ background: image ? '#ffffff' : currentBg }}
+        className="aspect-3/4 relative overflow-hidden rounded-xl mb-2 transition-colors duration-500"
+        style={{ background: currentBg }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt={name} className="absolute inset-0 w-full h-full object-cover" />
+          <img src={image} alt={name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <PlaceholderFigure tint={figureTint} />
         )}
@@ -200,49 +251,29 @@ export function ProductCard({ id, name, price, originalPrice, badge, colors, bg 
           </button>
         )}
 
-        {/* ── Quick add ── */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black text-white text-[11px] tracking-widest uppercase text-center py-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-10">
-          Quick Add +
-        </div>
       </div>
 
       {/* ── Card text ── */}
-      <div>
-        <p className="text-[13px] mb-1 text-black">{name}</p>
-        <div className="flex items-center gap-2">
-          {originalPrice && <span className="text-[12px] text-neutral-400 line-through">${originalPrice}</span>}
-          <span className="text-[12px] text-neutral-500">${price} CAD</span>
-        </div>
-        {colors && (
-          <div className="flex gap-1.5 mt-2">
-            {colors.map((c, i) => (
-              <div key={i} className="w-2.5 h-2.5 rounded-full border border-neutral-300" style={{ background: c }} />
-            ))}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[13px] text-black truncate">{name}</p>
+          <div className="flex items-center gap-2">
+            {originalPrice && <span className="text-[12px] text-neutral-400 line-through">${originalPrice}</span>}
+            <span className="text-[12px] text-neutral-500">${price} CAD</span>
           </div>
+        </div>
+        {productId && variants && variants.length > 0 && (
+          <button
+            onClick={handleQuickAdd}
+            aria-label={`Quick add ${name}`}
+            className="shrink-0 w-6 h-6 flex items-center justify-center text-neutral-400 hover:text-black transition-colors text-lg leading-none"
+          >
+            +
+          </button>
         )}
       </div>
     </Link>
   )
-}
-
-// ── Colour helpers (internal) ────────────────────────────
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace('#', '')
-  const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16)
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
-}
-function rgbToHex(r: number, g: number, b: number): string {
-  return '#' + [r, g, b].map(v => Math.min(255, Math.max(0, Math.round(v))).toString(16).padStart(2, '0')).join('')
-}
-function lighten(hex: string, amt: number): string {
-  if (!hex.startsWith('#')) return hex
-  const [r, g, b] = hexToRgb(hex)
-  return rgbToHex(r + amt, g + amt, b + amt)
-}
-function darken(hex: string, amt: number): string {
-  if (!hex.startsWith('#')) return hex
-  const [r, g, b] = hexToRgb(hex)
-  return rgbToHex(r - amt, g - amt, b - amt)
 }
 
 // ── Footer ───────────────────────────────────────────────
@@ -258,8 +289,14 @@ export function Footer() {
         </div>
         <div>
           <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Shop</p>
-          {['New Arrivals', 'Outerwear', 'Knitwear', 'Accessories', 'Sale'].map(l => (
-            <a key={l} href="/collection" className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{l}</a>
+          {[
+            ['New Arrivals', '/new-in'],
+            ['Outerwear', '/collection/outerwear'],
+            ['Knitwear', '/collection/knitwear'],
+            ['Accessories', '/collection/accessories'],
+            ['Sale', '/collection/all'],
+          ].map(([label, href]) => (
+            <a key={label} href={href} className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{label}</a>
           ))}
         </div>
         <div>
