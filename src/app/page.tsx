@@ -13,19 +13,33 @@ const CATEGORIES = [
 ]
 
 const HERO_SLIDES = [
-  { bg: '#0a0a0a', eyebrow: 'Est. Canada · Winter 2025',  label: 'SHOP COLLECTION', href: '/collection/all', figure: 'rgba(255,255,255,0.07)' },
-  { bg: '#111111', eyebrow: 'New Arrivals · Just Landed', label: 'NEW IN',           href: '/new-in',         figure: 'rgba(255,255,255,0.06)' },
   {
-    isSplit: true,
-    left:  { bg: '#1a1a1a', eyebrow: 'Womenswear', label: 'SHOP WOMEN', href: '/collection/all', figure: 'rgba(255,255,255,0.08)' },
-    right: { bg: '#222222', eyebrow: 'Menswear',   label: 'SHOP MEN',   href: '/collection/all', figure: 'rgba(255,255,255,0.05)' },
+    bg: '#0a0a0a',
+    eyebrow: 'Est. Canada · Winter 2025',
+    label: 'SHOP COLLECTION',
+    href: '/collection/all',
+    image: 'https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/hero/hero-slide-1.jpg',
+  },
+  {
+    bg: '#111111',
+    eyebrow: 'New Arrivals · Just Landed',
+    label: 'NEW IN',
+    href: '/new-in',
+    image: 'https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/hero/hero-slide-2.jpg',
+  },
+  {
+    bg: '#141414',
+    eyebrow: 'Winter Campaign · Lookbook',
+    label: 'EXPLORE ALL',
+    href: '/collection/all',
+    image: 'https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/hero/hero-slide-3.jpg',
   },
 ]
 
 const NAV_H  = 60
 const SLIDES = HERO_SLIDES.length
 
-type SlideContent = { bg?: string; eyebrow: string; label: string; href: string; figure: string }
+type SlideContent = { bg?: string; eyebrow: string; label: string; href: string; image?: string; figure?: string }
 
 function SlideInner({ content, index, total, isFirst, isRightSplit, isLastSlide }: {
   content: SlideContent
@@ -40,23 +54,20 @@ function SlideInner({ content, index, total, isFirst, isRightSplit, isLastSlide 
 
   return (
     <>
-      {/* Grid texture */}
-      <div style={{
-        position: 'absolute', inset: 0, opacity: 0.03,
-        backgroundImage:
-          'repeating-linear-gradient(0deg,transparent,transparent 79px,rgba(255,255,255,1) 79px,rgba(255,255,255,1) 80px),' +
-          'repeating-linear-gradient(90deg,transparent,transparent 79px,rgba(255,255,255,1) 79px,rgba(255,255,255,1) 80px)',
-        backgroundPosition: '0 20px',
-      }} />
-
-      {/* Placeholder figure */}
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-        <div style={{ position: 'relative', width: 180, height: '52%', marginBottom: 32 }}>
-          <div style={{ position: 'absolute', top: -56, left: '50%', transform: 'translateX(-50%)', width: 68, height: 68, borderRadius: '50%', background: content.figure }} />
-          <div style={{ width: '100%', height: '100%', borderRadius: '90px 90px 0 0', background: content.figure }} />
-          <div style={{ position: 'absolute', top: '16%', left: '-44%', right: '-44%', height: '34%', borderRadius: 4, background: content.figure, opacity: 0.8 }} />
+      {/* Editorial Hero Background Image */}
+      {content.image && (
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={content.image}
+            alt={content.label}
+            className="w-full h-full object-cover object-center brightness-90 scale-100"
+          />
+          {/* Dark cinematic vignette matching About page for seamless slide transitions */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/30 pointer-events-none" />
+          <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
         </div>
-      </div>
+      )}
 
       <p style={{ position: 'absolute', top: 16 + NAV_H, left: 24, fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', zIndex: 2 }}>
         {content.eyebrow}
@@ -172,12 +183,14 @@ export default function HomePage() {
         />
 
         <section className="grid md:grid-cols-2 border-t border-neutral-200">
-          <div className="min-h-[60vh] md:min-h-[80vh] flex items-end justify-center pb-10" style={{ background: '#000' }}>
-            <div className="relative" style={{ width: 160, height: 380 }}>
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2 rounded-full w-16 h-16" style={{ background: 'rgba(255,255,255,0.07)' }} />
-              <div className="w-full h-full rounded-t-full" style={{ background: 'rgba(255,255,255,0.07)' }} />
-              <div className="absolute rounded" style={{ top: '13%', left: '-40%', right: '-40%', height: '32%', background: 'rgba(255,255,255,0.05)' }} />
-            </div>
+          <div className="relative min-h-[60vh] md:min-h-[80vh] overflow-hidden bg-neutral-950">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/philosophy.jpg"
+              alt="Origin of One Philosophy - Master Atelier"
+              className="w-full h-full object-cover object-center brightness-95"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
           </div>
           <div className="flex flex-col justify-center px-8 md:px-14 py-16 border-l border-neutral-200">
             <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-6">Our philosophy</p>

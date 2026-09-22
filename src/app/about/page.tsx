@@ -17,31 +17,25 @@ const STATS = [
 export default function AboutPage() {
   return (
     <>
-      {/* ── HERO ── full bleed black, no nav offset needed (hero starts at top) */}
+      {/* ── HERO ── full bleed image with dark gradient */}
       <section className="min-h-screen bg-black text-white flex flex-col justify-end px-6 md:px-10 pb-16 pt-24 relative overflow-hidden">
-        {/* Subtle grid */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 79px, rgba(255,255,255,1) 79px, rgba(255,255,255,1) 80px), repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(255,255,255,1) 79px, rgba(255,255,255,1) 80px)',
-          }}
-        />
-
-        {/* Background figure */}
-        <div className="absolute inset-0 flex items-end justify-center pointer-events-none">
-          <div className="relative opacity-10" style={{ width: 240, height: '65%' }}>
-            <div className="absolute -top-20 left-1/2 -translate-x-1/2 rounded-full w-24 h-24 bg-white" />
-            <div className="w-full h-full rounded-t-full bg-white" />
-            <div className="absolute rounded bg-white" style={{ top: '13%', left: '-40%', right: '-40%', height: '34%', opacity: 0.6 }} />
-          </div>
+        {/* Editorial Background Image */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/hero/hero-slide-3.jpg"
+            alt="Origin of One Campaign"
+            className="w-full h-full object-cover object-center brightness-90"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/30" />
         </div>
 
         <div className="relative z-10 max-w-5xl">
-          <p className="text-[11px] tracking-widest uppercase text-white/40 mb-6">Est. Canada · Since 2019</p>
+          <p className="text-[11px] tracking-widest uppercase text-white/60 mb-6">Est. Canada · Since 2019</p>
           <h1 className="font-serif leading-[0.95] mb-8" style={{ fontSize: 'clamp(3.5rem, 10vw, 9rem)' }}>
             Built on<br />one <em>belief.</em>
           </h1>
-          <p className="text-[15px] text-white/50 max-w-lg leading-relaxed">
+          <p className="text-[15px] text-white/70 max-w-lg leading-relaxed">
             That every wardrobe should have fewer, better things. That quality outlasts trends. That Canadian winters deserve clothing that actually works.
           </p>
         </div>
@@ -83,15 +77,14 @@ export default function AboutPage() {
             What began as a single overcoat has grown into a complete winter wardrobe — still minimal, still purposeful, still made to handle whatever the Canadian climate delivers.
           </p>
         </div>
-        <div
-          className="min-h-[50vh] md:min-h-[70vh] flex items-end justify-center pb-10 order-1 md:order-2"
-          style={{ background: '#000' }}
-        >
-          <div className="relative" style={{ width: 160, height: 380 }}>
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 rounded-full w-16 h-16" style={{ background: 'rgba(255,255,255,0.07)' }} />
-            <div className="w-full h-full rounded-t-full" style={{ background: 'rgba(255,255,255,0.08)' }} />
-            <div className="absolute rounded" style={{ top: '14%', left: '-40%', right: '-40%', height: '33%', background: 'rgba(255,255,255,0.06)' }} />
-          </div>
+        <div className="relative min-h-[50vh] md:min-h-[70vh] overflow-hidden order-1 md:order-2 bg-neutral-950">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/philosophy.jpg"
+            alt="Master tailoring atelier"
+            className="w-full h-full object-cover object-center brightness-95"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
         </div>
       </section>
 
@@ -107,8 +100,15 @@ export default function AboutPage() {
 
       {/* ── SUSTAINABILITY ── */}
       <section className="bg-black text-white grid md:grid-cols-2 border-b border-neutral-800">
-        <div className="px-8 md:px-14 py-16 md:py-20 flex items-center">
-          <h2 className="font-serif leading-[1.05]" style={{ fontSize: 'clamp(2rem, 5vw, 4rem)' }}>
+        <div className="relative min-h-[45vh] md:min-h-full overflow-hidden flex items-end p-8 md:p-14">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/hero/hero-slide-1.jpg"
+            alt="Responsible Winter Fashion"
+            className="absolute inset-0 w-full h-full object-cover object-center brightness-75"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/20" />
+          <h2 className="font-serif leading-[1.05] relative z-10" style={{ fontSize: 'clamp(2rem, 5vw, 4rem)' }}>
             Clothing that<br /><em>does less harm.</em>
           </h2>
         </div>

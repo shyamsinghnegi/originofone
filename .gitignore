@@ -38,3 +38,7 @@ tsconfig.tsbuildinfo
 *.log
 npm-debug.log*
 convex/seed.ts
+
+# local assets / scratch (hosted on Cloudflare R2)
+public/images/
+scratch/

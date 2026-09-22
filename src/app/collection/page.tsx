@@ -55,7 +55,14 @@ export default function CollectionsPage() {
           })}
 
           <Link href="/collection/all" className="group block">
-            <div className="relative aspect-5/4 overflow-hidden rounded-xl bg-black" />
+            <div className="relative aspect-5/4 overflow-hidden rounded-xl bg-black">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/hero/hero-slide-3.jpg"
+                alt="View All Collections"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-90"
+              />
+            </div>
             <div className="flex items-center justify-between pt-3">
               <p className="text-[13px] text-black">View All</p>
               <span className="text-neutral-400 group-hover:text-black group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-200">↗</span>
