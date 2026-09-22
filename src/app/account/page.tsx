@@ -5,9 +5,9 @@ import { useUser, useClerk } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useConvexAuth } from 'convex/react'
 import { api } from '@/../convex/_generated/api'
-import { Footer } from '@/components/ui'
+import { Footer, ProductCard } from '@/components/ui'
 
-type View = 'dashboard' | 'profile' | 'orders' | 'security' | 'addresses'
+type View = 'profile' | 'orders' | 'wishlist' | 'addresses' | 'security'
 
 const STATUS_STYLES: Record<string, string> = {
   pending:    'text-neutral-500 bg-neutral-100',
@@ -31,11 +31,14 @@ export default function AccountPage() {
   const updateDetails = useMutation(api.users.updateDetails)
   const addAddress = useMutation(api.users.addAddress)
   const removeAddress = useMutation(api.users.removeAddress)
+  const requestReturn = useMutation(api.orders.requestReturn)
+  const wishlistItems = useQuery(api.wishlist.listMine, isAuthenticated ? undefined : 'skip')
 
-  const [view, setView] = useState<View>('dashboard')
+  const [view, setView] = useState<View>('profile')
 
   // Profile form
-  const [profile, setProfile] = useState({ firstName: '', lastName: '', phone: '' })
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [profile, setProfile] = useState({ firstName: '', lastName: '', phone: '', preferredTopSize: '', preferredBottomSize: '' })
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileSaved, setProfileSaved] = useState(false)
 
@@ -63,7 +66,12 @@ export default function AccountPage() {
       if (profile.firstName.trim()) clerkPatch.firstName = profile.firstName.trim()
       if (profile.lastName.trim()) clerkPatch.lastName = profile.lastName.trim()
       if (Object.keys(clerkPatch).length) await user.update(clerkPatch)
-      if (profile.phone.trim()) await updateDetails({ phone: profile.phone.trim() })
+      
+      await updateDetails({ 
+        phone: profile.phone.trim() || undefined,
+        preferredTopSize: profile.preferredTopSize || undefined,
+        preferredBottomSize: profile.preferredBottomSize || undefined
+      })
       setProfileSaved(true)
       setTimeout(() => setProfileSaved(false), 2000)
     } finally {
@@ -129,35 +137,33 @@ export default function AccountPage() {
   return (
     <>
       <div style={{ paddingTop: 'var(--nav-height, 60px)' }} className="min-h-screen bg-white">
-        <div className="max-w-6xl mx-auto px-5 py-12">
+        <div className="max-w-7xl mx-auto px-5 py-12 flex flex-col md:flex-row gap-12">
 
-          {/* Header */}
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <p className="text-[11px] tracking-widest uppercase text-neutral-400 mb-1">
-                {view === 'dashboard' ? 'My Account' : (
-                  <button onClick={() => setView('dashboard')} className="hover:text-black transition-colors">
-                    ← My Account
-                  </button>
-                )}
-              </p>
-              <h1 className="font-serif text-4xl text-black font-extrabold">
-                {view === 'dashboard' && displayName}
-                {view === 'profile' && 'My Profile'}
-                {view === 'orders' && 'Your Orders'}
-                {view === 'security' && 'Login & Security'}
-                {view === 'addresses' && 'Your Addresses'}
-              </h1>
-            </div>
-            {view === 'dashboard' && (
+          {/* Sidebar */}
+          <div className="w-full md:w-64 shrink-0 space-y-1 md:space-y-2 border-b md:border-b-0 pb-8 md:pb-0 border-neutral-200">
+            <h1 className="font-serif text-3xl text-black font-extrabold mb-8">{displayName}</h1>
+            {[
+              { id: 'profile', label: 'My Account' },
+              { id: 'orders', label: 'Your Orders' },
+              { id: 'wishlist', label: 'Saved Items' },
+              { id: 'addresses', label: 'Addresses' },
+              { id: 'security', label: 'Login & Security' },
+            ].map(item => (
               <button
-                onClick={handleSignOut}
-                className="text-[11px] tracking-widest uppercase text-neutral-400 hover:text-black transition-colors"
+                key={item.id}
+                onClick={() => setView(item.id as View)}
+                className={`block w-full text-left px-4 py-3 text-[12px] tracking-widest uppercase transition-colors ${view === item.id ? 'bg-neutral-100 text-black font-medium' : 'text-neutral-500 hover:bg-neutral-50 hover:text-black'}`}
               >
-                Sign Out
+                {item.label}
               </button>
-            )}
+            ))}
+            <button onClick={handleSignOut} className="block w-full text-left px-4 py-3 text-[12px] tracking-widest uppercase text-neutral-400 hover:text-black mt-4">
+              Sign Out
+            </button>
           </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 min-w-0">
 
           {/* Pending-payment banner — complete an unpaid order */}
           {pendingOrders && pendingOrders.length > 0 && (
@@ -181,85 +187,174 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* Dashboard cards */}
-          {view === 'dashboard' && (
-            <div className="grid grid-cols-2 gap-4">
-              <DashCard
-                title="My Profile"
-                subtitle={email}
-                icon={<PersonIcon />}
-                onClick={() => { setProfile({ firstName: user?.firstName ?? '', lastName: user?.lastName ?? '', phone: convexUser?.phone ?? '' }); setView('profile') }}
-              />
-              <DashCard
-                title="Your Orders"
-                subtitle={orders === undefined ? 'Loading…' : orders.length === 0 ? 'No orders yet' : `${orders.length} order${orders.length !== 1 ? 's' : ''}`}
-                icon={<BoxIcon />}
-                onClick={() => setView('orders')}
-              />
-              <DashCard
-                title="Login & Security"
-                subtitle="Password & sign-in"
-                icon={<LockIcon />}
-                onClick={() => { setPw({ current: '', next: '', confirm: '' }); setPwError(null); setPwSaved(false); setView('security') }}
-              />
-              <DashCard
-                title="Your Addresses"
-                subtitle={convexUser?.addresses?.length ? `${convexUser.addresses.length} saved` : 'No addresses yet'}
-                icon={<PinIcon />}
-                onClick={() => { setShowAddForm(false); setView('addresses') }}
-              />
-            </div>
-          )}
-
           {/* Profile sub-view */}
           {view === 'profile' && (
-            <div className="max-w-sm space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">First Name</label>
-                  <input
-                    type="text"
-                    value={profile.firstName}
-                    onChange={e => setProfile(p => ({ ...p, firstName: e.target.value }))}
-                    placeholder={user?.firstName ?? 'First name'}
-                    className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors placeholder:text-neutral-300"
-                  />
+            <div className="max-w-md space-y-6">
+              {!isEditingProfile ? (
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="font-serif text-3xl text-black mb-2">Good to see you, {user?.firstName ?? 'there'}.</h2>
+                    <p className="text-neutral-500 text-[13px]">Manage your personal information and preferences.</p>
+                  </div>
+
+                  <div className="space-y-6 border border-neutral-200 p-6">
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-1">Name</p>
+                        <p className="text-[14px] text-black">{user?.firstName} {user?.lastName}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-1">Email</p>
+                        <p className="text-[14px] text-black">{email}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-1">Phone</p>
+                        <p className="text-[14px] text-black">{convexUser?.phone || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="pt-4 border-t border-neutral-100 grid grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-1">Top Size</p>
+                        <p className="text-[14px] text-black">{convexUser?.preferredTopSize || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] tracking-widest uppercase text-neutral-400 mb-1">Bottom Size</p>
+                        <p className="text-[14px] text-black">{convexUser?.preferredBottomSize || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setProfile({
+                        firstName: user?.firstName ?? '',
+                        lastName: user?.lastName ?? '',
+                        phone: convexUser?.phone ?? '',
+                        preferredTopSize: convexUser?.preferredTopSize ?? '',
+                        preferredBottomSize: convexUser?.preferredBottomSize ?? ''
+                      })
+                      setIsEditingProfile(true)
+                    }}
+                    className="border border-black px-6 py-3 text-[11px] tracking-widest uppercase text-black hover:bg-black hover:text-white transition-colors"
+                  >
+                    Edit Profile
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Last Name</label>
-                  <input
-                    type="text"
-                    value={profile.lastName}
-                    onChange={e => setProfile(p => ({ ...p, lastName: e.target.value }))}
-                    placeholder={user?.lastName ?? 'Last name'}
-                    className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors placeholder:text-neutral-300"
-                  />
+              ) : (
+                <div className="space-y-5">
+                  <h2 className="font-serif text-2xl text-black mb-4">Edit Profile</h2>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">First Name</label>
+                      <input
+                        type="text"
+                        value={profile.firstName}
+                        onChange={e => setProfile(p => ({ ...p, firstName: e.target.value }))}
+                        placeholder={user?.firstName ?? 'First name'}
+                        className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors placeholder:text-neutral-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Last Name</label>
+                      <input
+                        type="text"
+                        value={profile.lastName}
+                        onChange={e => setProfile(p => ({ ...p, lastName: e.target.value }))}
+                        placeholder={user?.lastName ?? 'Last name'}
+                        className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors placeholder:text-neutral-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Email Address</label>
+                    <div className="border border-neutral-100 px-4 py-3 text-[13px] text-neutral-400 bg-neutral-50">{email}</div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={profile.phone}
+                      onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
+                      placeholder={convexUser?.phone ?? '+1 (416) 000-0000'}
+                      className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors placeholder:text-neutral-300"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Top Size</label>
+                      <input
+                        list="top-sizes"
+                        value={profile.preferredTopSize}
+                        onChange={e => setProfile(p => ({ ...p, preferredTopSize: e.target.value }))}
+                        placeholder="Select or type size..."
+                        className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors placeholder:text-neutral-300"
+                      />
+                      <datalist id="top-sizes">
+                        <option value="XS" />
+                        <option value="S" />
+                        <option value="M" />
+                        <option value="L" />
+                        <option value="XL" />
+                        <option value="XXL" />
+                        <option value="XXXL" />
+                      </datalist>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Bottom Size</label>
+                      <input
+                        list="bottom-sizes"
+                        value={profile.preferredBottomSize}
+                        onChange={e => setProfile(p => ({ ...p, preferredBottomSize: e.target.value }))}
+                        placeholder="Select or type size..."
+                        className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors placeholder:text-neutral-300"
+                      />
+                      <datalist id="bottom-sizes">
+                        <option value="26" />
+                        <option value="28" />
+                        <option value="30" />
+                        <option value="32" />
+                        <option value="34" />
+                        <option value="36" />
+                        <option value="38" />
+                        <option value="40" />
+                        <option value="42" />
+                        <option value="44" />
+                        <option value="46" />
+                      </datalist>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={async () => {
+                        setProfileSaving(true)
+                        try {
+                          await user?.update({ firstName: profile.firstName, lastName: profile.lastName })
+                          await updateDetails({ phone: profile.phone, preferredTopSize: profile.preferredTopSize, preferredBottomSize: profile.preferredBottomSize })
+                          setIsEditingProfile(false)
+                        } catch (err) {
+                          console.error(err)
+                        }
+                        setProfileSaving(false)
+                      }}
+                      disabled={profileSaving}
+                      className="bg-black text-white text-[11px] tracking-widest uppercase px-8 py-4 hover:bg-neutral-900 transition-colors disabled:opacity-50"
+                    >
+                      {profileSaving ? 'Saving…' : 'Save Changes'}
+                    </button>
+                    <button
+                      onClick={() => setIsEditingProfile(false)}
+                      disabled={profileSaving}
+                      className="border border-neutral-200 text-neutral-500 text-[11px] tracking-widest uppercase px-8 py-4 hover:border-black hover:text-black transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Email Address</label>
-                <div className="border border-neutral-100 px-4 py-3 text-[13px] text-neutral-400 bg-neutral-50">{email}</div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] tracking-widest uppercase text-neutral-400 mb-1.5">Phone Number</label>
-                <input
-                  type="tel"
-                  value={profile.phone}
-                  onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
-                  placeholder={convexUser?.phone ?? '+1 (416) 000-0000'}
-                  className="w-full border border-neutral-200 px-4 py-3 text-[13px] bg-transparent outline-none focus:border-black transition-colors placeholder:text-neutral-300"
-                />
-              </div>
-
-              <button
-                onClick={handleSaveProfile}
-                disabled={profileSaving}
-                className="w-full bg-black text-white text-[11px] tracking-widest uppercase py-3.5 hover:bg-neutral-900 transition-colors disabled:opacity-50"
-              >
-                {profileSaved ? 'Saved ✓' : profileSaving ? 'Saving…' : 'Save Changes'}
-              </button>
+              )}
             </div>
           )}
 
@@ -313,6 +408,30 @@ export default function AccountPage() {
                       <p className="text-[12px] text-neutral-400 mt-2">
                         Total: ${order.total.toFixed(2)} CAD
                       </p>
+
+                      <div className="flex gap-4 p-5 border-t border-neutral-100 flex-col md:flex-row md:items-start justify-between bg-neutral-50/50 mt-4">
+                        <div className="space-y-1 text-[13px] text-neutral-500 max-w-sm">
+                          <p>Shipping Address</p>
+                          <p className="text-black">{order.shippingAddress?.line1}{order.shippingAddress?.line2 ? `, ${order.shippingAddress.line2}` : ''}</p>
+                          <p>{order.shippingAddress?.city}, {order.shippingAddress?.province} {order.shippingAddress?.postalCode}</p>
+                        </div>
+                        {order.status === 'delivered' && !order.returnRequested && (
+                          <button 
+                            onClick={() => {
+                              const reason = window.prompt("Reason for return?")
+                              if (reason) requestReturn({ id: order._id, reason })
+                            }}
+                            className="text-[11px] tracking-widest uppercase text-neutral-500 hover:text-black border-b border-neutral-300 pb-0.5 self-start"
+                          >
+                            Request Return
+                          </button>
+                        )}
+                        {order.returnRequested && (
+                          <div className="text-[11px] tracking-widest uppercase text-neutral-500 self-start">
+                            Return Requested
+                          </div>
+                        )}
+                      </div>
 
                       {order.returnRequested && (
                         <p className="text-[11px] text-neutral-500 mt-3 bg-neutral-50 px-3 py-2">
@@ -551,6 +670,34 @@ export default function AccountPage() {
               )}
             </div>
           )}
+          {/* Wishlist sub-view */}
+          {view === 'wishlist' && (
+            <div className="space-y-6">
+              <h2 className="font-serif text-2xl text-black">Saved Items</h2>
+              {wishlistItems === undefined ? (
+                <div className="py-12 text-center border border-dashed border-neutral-200 text-neutral-400">Loading...</div>
+              ) : wishlistItems.length === 0 ? (
+                <div className="py-12 text-center border border-dashed border-neutral-200 text-neutral-400">Your wishlist is empty.</div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {wishlistItems.map((item: any) => (
+                    <ProductCard 
+                      key={item._id} 
+                      id={item.product.slug}
+                      productId={item.product._id}
+                      name={item.product.name}
+                      price={item.product.price}
+                      originalPrice={item.product.compareAtPrice}
+                      image={item.product.images?.[0]}
+                      variants={item.product.variants}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          </div>
         </div>
       </div>
       <Footer />
@@ -558,54 +705,3 @@ export default function AccountPage() {
   )
 }
 
-function DashCard({ title, subtitle, icon, onClick }: { title: string; subtitle: string; icon: React.ReactNode; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="group border border-neutral-200 p-8 text-left hover:border-black transition-colors duration-200 flex flex-col gap-5"
-    >
-      <div className="text-neutral-500 group-hover:text-black transition-colors">{icon}</div>
-      <div>
-        <p className="text-[16px] text-black font-medium mb-1">{title}</p>
-        <p className="text-[13px] text-neutral-500 truncate">{subtitle}</p>
-      </div>
-      <div className="text-[12px] tracking-widest uppercase text-neutral-500 group-hover:text-black transition-colors">
-        View →
-      </div>
-    </button>
-  )
-}
-
-function PersonIcon() {
-  return (
-    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-    </svg>
-  )
-}
-
-function BoxIcon() {
-  return (
-    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-      <polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
-    </svg>
-  )
-}
-
-function LockIcon() {
-  return (
-    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  )
-}
-
-function PinIcon() {
-  return (
-    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-    </svg>
-  )
-}

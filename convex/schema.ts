@@ -32,6 +32,8 @@ export default defineSchema({
     phone: v.optional(v.string()),
     gender: v.optional(v.string()),
     dob: v.optional(v.string()),
+    preferredTopSize: v.optional(v.string()),
+    preferredBottomSize: v.optional(v.string()),
     onboardingComplete: v.optional(v.boolean()),
     role: v.union(v.literal("customer"), v.literal("admin")),
     addresses: v.array(address),
@@ -147,4 +149,36 @@ export default defineSchema({
   })
     .index("by_product_id", ["productId"])
     .index("by_user_id", ["userId"]),
+
+  wishlist: defineTable({
+    userId: v.id("users"),
+    productId: v.id("products"),
+    addedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_user_product", ["userId", "productId"]),
+
+  inventory_reservations: defineTable({
+    productId: v.id("products"),
+    color: v.string(),
+    size: v.string(),
+    quantity: v.number(),
+    expiresAt: v.number(),
+    stripePaymentIntentId: v.optional(v.string()),
+    userId: v.optional(v.id("users")), // optionally tied to user
+  })
+    .index("by_product", ["productId"])
+    .index("by_stripe_intent", ["stripePaymentIntentId"]),
+
+  promotions: defineTable({
+    code: v.string(),
+    type: v.union(v.literal("percentage"), v.literal("fixed")),
+    value: v.number(), // percentage (e.g. 15 for 15%) or fixed amount in dollars (e.g. 20 for $20)
+    isActive: v.boolean(),
+    expiryDate: v.optional(v.number()), // timestamp
+    usageLimit: v.optional(v.number()),
+    timesUsed: v.number(),
+  })
+    .index("by_code", ["code"])
+    .index("by_active", ["isActive"]),
 });
