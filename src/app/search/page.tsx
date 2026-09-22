@@ -156,20 +156,23 @@ function SearchResults() {
           </div>
 
           {initialQ && (
-            <div className="px-6 md:px-12 overflow-x-auto" data-lenis-prevent="true">
-              <div className="flex gap-2 w-max">
-                {CATEGORIES.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setActiveCategory(c)}
-                    className={`px-4 h-8 rounded-full text-[12px] whitespace-nowrap transition-colors ${
-                      activeCategory === c ? 'bg-ink text-paper' : 'bg-white border border-black/10 text-ink hover:border-black/30'
-                    }`}
-                  >
-                    {c === 'All' ? 'View all' : c}
-                  </button>
-                ))}
+            <div className="relative">
+              <div className="px-6 md:px-12 overflow-x-auto" data-lenis-prevent="true">
+                <div className="flex gap-2 w-max">
+                  {CATEGORIES.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setActiveCategory(c)}
+                      className={`px-4 h-8 rounded-full text-[12px] whitespace-nowrap transition-colors ${
+                        activeCategory === c ? 'bg-ink text-paper' : 'bg-white border border-black/10 text-ink hover:border-black/30'
+                      }`}
+                    >
+                      {c === 'All' ? 'View all' : c}
+                    </button>
+                  ))}
+                </div>
               </div>
+              <div className="md:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-linear-to-l from-white to-transparent" />
             </div>
           )}
         </div>
@@ -224,7 +227,7 @@ function SearchResults() {
         style={{ pointerEvents: filterOpen ? 'auto' : 'none' }}
         onClick={() => setFilterOpen(false)}
       />
-      <div ref={filterPanelRef} className="fixed top-0 right-0 h-full w-105 max-w-[100vw] bg-paper z-201 flex flex-col invisible" style={{ pointerEvents: filterOpen ? 'auto' : 'none' }}>
+      <div ref={filterPanelRef} className="fixed top-0 right-0 h-screen w-105 max-w-[100vw] bg-paper z-201 flex flex-col invisible" style={{ pointerEvents: filterOpen ? 'auto' : 'none' }}>
         <div className="flex flex-col items-center justify-center py-4 border-b border-black/10 relative">
           <h2 className="text-[11px] font-medium tracking-widest uppercase mb-0.5">Filter & Sort</h2>
           <p className="text-[10px] text-muted">{filtered.length} Results</p>

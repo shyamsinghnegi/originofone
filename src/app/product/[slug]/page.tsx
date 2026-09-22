@@ -89,9 +89,9 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           <div className="h-3 w-40 rounded bg-neutral-100 animate-pulse" />
         </div>
         <div className="grid md:grid-cols-2 min-h-[85vh]">
-          <div className="border-r border-border">
-            <div className="aspect-4/5 bg-neutral-100 animate-pulse" />
-            <div className="grid grid-cols-4 border-t border-border">
+          <div className="border-r border-border md:sticky md:top-[60px] md:h-[calc(100vh-60px)] flex flex-col">
+            <div className="aspect-4/5 md:aspect-auto flex-1 bg-neutral-100 animate-pulse" />
+            <div className="grid grid-cols-4 border-t border-border shrink-0">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="aspect-square border-r last:border-r-0 border-border bg-neutral-50 animate-pulse" />
               ))}
@@ -154,9 +154,9 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
         <div className="grid md:grid-cols-2 min-h-[85vh]">
           {/* Gallery */}
-          <div className="border-r border-border">
+          <div className="border-r border-border md:sticky md:top-[60px] md:h-[calc(100vh-60px)] flex flex-col">
             <div
-              className="aspect-4/5 flex items-end justify-center pb-8 relative"
+              className="aspect-4/5 md:aspect-auto flex-1 flex items-end justify-center pb-8 relative overflow-hidden"
               style={images ? {} : { background: bgColor }}
             >
               {images ? (
@@ -177,7 +177,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
             </div>
 
             {/* Thumbs */}
-            <div className="grid grid-cols-4 border-t border-border">
+            <div className="grid grid-cols-4 border-t border-border shrink-0">
               {(images ?? thumbBgs).slice(0, 4).map((src, i) => (
                 <button
                   key={i}
@@ -196,7 +196,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           </div>
 
           {/* Info */}
-          <div className="px-8 md:px-12 py-10 overflow-y-auto">
+          <div className="px-8 md:px-12 py-10">
             <p className="text-[11px] tracking-widest uppercase text-muted mb-3">Origin of One</p>
             <h1 className="font-serif text-4xl md:text-5xl leading-[1.05] mb-5">{product.name}</h1>
 

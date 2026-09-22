@@ -110,7 +110,7 @@ export function ProductGridPage({
     <>
       <div style={{ paddingTop: 'var(--nav-height, 60px)' }}>
         {/* Filter strip + category pills — one continuous grey band */}
-        <div className="sticky top-15 z-30 bg-neutral-200/95 backdrop-blur-md pt-4 pb-3 w-full border-b border-black/5">
+        <div className="sticky top-[60px] z-30 bg-neutral-200/95 backdrop-blur-md pt-4 pb-3 w-full border-b border-black/5">
           <div className="flex items-center justify-between px-6 md:px-12 w-full mb-3">
             <div className="text-[11px] md:text-[11px] font-medium tracking-widest uppercase text-ink">
               {title}
@@ -122,27 +122,29 @@ export function ProductGridPage({
               className="px-4 py-2 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-black/5 text-[11px] md:text-[11px] text-ink hover:bg-neutral-50 transition-all whitespace-nowrap flex items-center gap-2 font-medium"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 2h8"/><path d="M9 2v4.5L6 11v11h12V11l-3-4.5V2"/><path d="M6 11h12"/>
+                <path d="M8 2h8" /><path d="M9 2v4.5L6 11v11h12V11l-3-4.5V2" /><path d="M6 11h12" />
               </svg>
               Filters
             </button>
           </div>
 
           {showCategoryFilter && onCategoryChange && (
-            <div className="px-6 md:px-12 overflow-x-auto" data-lenis-prevent="true">
-              <div className="flex gap-2 w-max">
-                {CATEGORIES.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => onCategoryChange(c)}
-                    className={`px-4 h-8 rounded-full text-[12px] whitespace-nowrap transition-colors ${
-                      activeCategory === c ? 'bg-ink text-paper' : 'bg-white border border-black/10 text-ink hover:border-black/30'
-                    }`}
-                  >
-                    {c === 'All' ? 'View all' : c}
-                  </button>
-                ))}
+            <div className="relative hidden md:block">
+              <div className="px-6 md:px-12 overflow-x-auto" data-lenis-prevent="true">
+                <div className="flex gap-2 w-max">
+                  {CATEGORIES.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => onCategoryChange(c)}
+                      className={`px-4 h-8 rounded-full text-[12px] whitespace-nowrap transition-colors ${activeCategory === c ? 'bg-ink text-paper' : 'bg-white border border-black/10 text-ink hover:border-black/30'
+                        }`}
+                    >
+                      {c === 'All' ? 'View all' : c}
+                    </button>
+                  ))}
+                </div>
               </div>
+              <div className="md:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-linear-to-l from-neutral-200 to-neutral-200/0" />
             </div>
           )}
         </div>
@@ -193,13 +195,13 @@ export function ProductGridPage({
         style={{ pointerEvents: filterOpen ? 'auto' : 'none' }}
         onClick={() => setFilterOpen(false)}
       />
-      <div ref={filterPanelRef} className="fixed top-0 right-0 h-full w-105 max-w-[100vw] bg-paper z-201 flex flex-col invisible" style={{ pointerEvents: filterOpen ? 'auto' : 'none' }}>
+      <div ref={filterPanelRef} className="fixed top-0 right-0 h-screen w-105 max-w-[100vw] bg-paper z-201 flex flex-col invisible" style={{ pointerEvents: filterOpen ? 'auto' : 'none' }}>
         <div className="flex flex-col items-center justify-center py-4 border-b border-black/10 relative">
           <h2 className="text-[11px] font-medium tracking-widest uppercase mb-0.5">Filter & Sort</h2>
           <p className="text-[10px] text-muted">{filtered.length} Products</p>
           <button onClick={() => setFilterOpen(false)} className="absolute right-5 top-1/2 -translate-y-1/2 p-2 -mr-2 text-muted hover:text-ink transition-colors">
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1" viewBox="0 0 24 24">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
@@ -247,9 +249,8 @@ export function ProductGridPage({
                 <button
                   key={name}
                   onClick={() => toggleColor(name)}
-                  className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-full border transition-colors text-left ${
-                    selectedColors.includes(name) ? 'border-ink bg-black/5' : 'border-black/10 hover:border-black/30'
-                  }`}
+                  className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-full border transition-colors text-left ${selectedColors.includes(name) ? 'border-ink bg-black/5' : 'border-black/10 hover:border-black/30'
+                    }`}
                 >
                   <span
                     className="w-5 h-5 rounded-full border border-black/10 shrink-0"

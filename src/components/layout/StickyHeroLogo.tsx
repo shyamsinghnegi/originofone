@@ -72,6 +72,8 @@ export function StickyHeroLogo() {
           position: 'sticky',
           top: '50vh',
           height: 'calc(var(--logo-h) * 0.88 / 2)',
+          transform: 'translateZ(0)',
+          willChange: 'transform',
         }}
       >
         <h1

@@ -40,7 +40,7 @@ export function Nav() {
   const isTransparent = isHome && !isPastHero && !menuOpen
   const showLogo = !isHome || isPastHero
 
-  const navClasses = isTransparent ? 'bg-transparent border-transparent' : 'bg-white border-neutral-200'
+  const navClasses = isTransparent ? 'bg-transparent border-b-0' : 'bg-white border-b border-neutral-200'
   const linkClasses = isTransparent ? 'text-white/80 hover:text-white' : 'text-neutral-500 hover:text-black'
   const iconClasses = isTransparent ? 'text-white/90 hover:text-white' : 'text-neutral-500 hover:text-black'
   const badgeClasses = isTransparent ? 'bg-white text-black' : 'bg-black text-white'
@@ -64,119 +64,125 @@ export function Nav() {
 
   return (
     <>
-    <nav
-      className={`fixed top-0 left-0 right-0 z-[100] transition-colors duration-300 border-b ${navClasses}`}
-      style={{ height: 'var(--nav-height, 60px)' }}
-      aria-label="Site navigation"
-    >
-      <div className="flex items-center justify-between h-full px-6 md:px-10">
+      <nav
+        className={`fixed top-0 left-0 right-0 z-[100] transition-colors duration-300 transform-gpu ${navClasses}`}
+        style={{ height: 'var(--nav-height, 60px)' }}
+        aria-label="Site navigation"
+      >
+        <div className="flex items-center justify-between h-full px-6 md:px-10">
 
-        {/* Left nav links */}
-        <div className="hidden md:flex items-center gap-8">
-          <Link href="/collection" className={`text-[11px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>Collections</Link>
-          <Link href="/new-in" className={`text-[11px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>New In</Link>
-          <Link href="/about" className={`text-[11px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>About</Link>
-        </div>
+          {/* Left nav links */}
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="/collection" className={`text-[11px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>Collections</Link>
+            <Link href="/new-in" className={`text-[11px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>New In</Link>
+            <Link href="/about" className={`text-[11px] tracking-widest uppercase transition-colors link-underline ${linkClasses}`}>About</Link>
+          </div>
 
-        {/* Centre logo */}
-        <div
-          className={`absolute left-1/2 -translate-x-1/2 top-1/2 transition-all duration-500 ${
-            showLogo ? 'opacity-100 pointer-events-auto -translate-y-1/2' : 'opacity-0 pointer-events-none -translate-y-[30%]'
-          }`}
-        >
-          <Link
-            href="/"
-            className={`font-serif text-sm tracking-[0.30em] uppercase transition-colors ${
-              isTransparent ? 'text-white hover:text-white/80' : 'text-black hover:text-neutral-500'
-            }`}
+          {/* Centre logo */}
+          <div
+            className={`absolute left-1/2 -translate-x-1/2 top-1/2 transition-all duration-500 ${showLogo ? 'opacity-100 pointer-events-auto -translate-y-1/2' : 'opacity-0 pointer-events-none -translate-y-[30%]'
+              }`}
           >
-            ORIGIN OF ONE
-          </Link>
-        </div>
-
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden flex flex-col gap-[5px] p-1"
-          onClick={() => setMenuOpen(v => !v)}
-          aria-label="Toggle menu"
-        >
-          <span className={`block w-5 h-px transition-all duration-300 ${hamburgerLineClasses} ${menuOpen ? 'rotate-45 translate-y-[6px]' : ''}`} />
-          <span className={`block w-5 h-px transition-all duration-300 ${hamburgerLineClasses} ${menuOpen ? 'opacity-0' : ''}`} />
-          <span className={`block w-5 h-px transition-all duration-300 ${hamburgerLineClasses} ${menuOpen ? '-rotate-45 -translate-y-[6px]' : ''}`} />
-        </button>
-
-        {/* Right icons */}
-        <div className="flex items-center gap-5">
-          <button aria-label="Search" onClick={() => setSearchOpen(true)} className={`transition-colors ${iconClasses}`}>
-            <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
-
-          {/* Account — shows initials bubble if signed in, otherwise icon */}
-          {!isLoaded ? (
-            <div className="hidden md:block w-8 h-8 rounded-full animate-pulse bg-current opacity-10" aria-hidden="true" />
-          ) : user ? (
-            <Link href="/account" className={`hidden md:flex items-center justify-center transition-colors ${iconClasses}`} aria-label={initials ? `Account (${initials})` : 'Account'}>
-              {initials ? (
-                <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-medium border ${isTransparent ? 'border-white/60 text-white' : 'border-neutral-300 text-neutral-600'}`}>
-                  {initials.toUpperCase()}
-                </span>
-              ) : (
-                <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                </svg>
-              )}
+            <Link
+              href="/"
+              className={`font-serif text-sm tracking-[0.30em] uppercase transition-colors ${isTransparent ? 'text-white hover:text-white/80' : 'text-black hover:text-neutral-500'
+                }`}
+            >
+              ORIGIN OF ONE
             </Link>
-          ) : (
-            <Link href="/sign-in" className={`hidden md:block text-[11px] tracking-widest uppercase transition-colors ${linkClasses}`}>
-              Sign In
-            </Link>
-          )}
+          </div>
 
-          {/* Cart */}
+          {/* Mobile hamburger */}
           <button
-            onClick={openCart}
-            className={`relative transition-colors ${iconClasses}`}
-            aria-label="Cart"
+            className="md:hidden flex flex-col gap-[5px] p-1"
+            onClick={() => setMenuOpen(v => !v)}
+            aria-label="Toggle menu"
           >
-            <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <path d="M16 10a4 4 0 0 1-8 0" />
-            </svg>
-            {count > 0 && (
-              <span className={`absolute -top-2 -right-2 rounded-full w-5 h-5 text-[11px] flex items-center justify-center font-medium transition-colors ${badgeClasses}`}>
-                {count}
-              </span>
-            )}
+            <span className={`block w-5 h-px transition-all duration-300 ${hamburgerLineClasses} ${menuOpen ? 'rotate-45 translate-y-[6px]' : ''}`} />
+            <span className={`block w-5 h-px transition-all duration-300 ${hamburgerLineClasses} ${menuOpen ? 'opacity-0' : ''}`} />
+            <span className={`block w-5 h-px transition-all duration-300 ${hamburgerLineClasses} ${menuOpen ? '-rotate-45 -translate-y-[6px]' : ''}`} />
           </button>
-        </div>
-      </div>
 
-      {/* Mobile slide-down menu */}
-      <div className={`md:hidden bg-white border-t border-neutral-200 overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-72' : 'max-h-0'}`}>
-        <div className="flex flex-col px-6 py-5 gap-5">
-          <Link href="/collection" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Collections</Link>
-          <Link href="/new-in" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>New In</Link>
-          <Link href="/about" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>About</Link>
-          {user ? (
-            <>
-              <Link href="/account" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Account</Link>
-              <button
-                onClick={() => { setMenuOpen(false); signOut().then(() => {}) }}
-                className="text-[11px] tracking-widest uppercase text-neutral-400 text-left"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <Link href="/sign-in" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Sign In</Link>
-          )}
+          {/* Right icons */}
+          <div className="flex items-center gap-5">
+            <button aria-label="Search" onClick={() => setSearchOpen(true)} className={`transition-colors ${iconClasses}`}>
+              <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+
+            {/* Account — shows initials bubble if signed in, otherwise icon */}
+            {!isLoaded ? (
+              <div className="hidden md:block w-8 h-8 rounded-full animate-pulse bg-current opacity-10" aria-hidden="true" />
+            ) : user ? (
+              <Link href="/account" className={`hidden md:flex items-center justify-center transition-colors ${iconClasses}`} aria-label={initials ? `Account (${initials})` : 'Account'}>
+                {initials ? (
+                  <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-medium border ${isTransparent ? 'border-white/60 text-white' : 'border-neutral-300 text-neutral-600'}`}>
+                    {initials.toUpperCase()}
+                  </span>
+                ) : (
+                  <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                  </svg>
+                )}
+              </Link>
+            ) : (
+              <Link href="/sign-in" className={`hidden md:block text-[11px] tracking-widest uppercase transition-colors ${linkClasses}`}>
+                Sign In
+              </Link>
+            )}
+
+            {/* Cart */}
+            <button
+              onClick={openCart}
+              className={`relative transition-colors ${iconClasses}`}
+              aria-label="Cart"
+            >
+              <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+              {count > 0 && (
+                <span className={`absolute -top-2 -right-2 rounded-full w-5 h-5 text-[11px] flex items-center justify-center font-medium transition-colors ${badgeClasses}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
-    </nav>
-    <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+
+        {/* Mobile menu backdrop */}
+        <div
+          className={`md:hidden fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${menuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          style={{ top: 'var(--nav-height, 60px)' }}
+          onClick={() => setMenuOpen(false)}
+          aria-hidden="true"
+        />
+
+        {/* Mobile slide-down menu */}
+        <div className={`md:hidden relative z-40 overflow-hidden transition-all duration-300 ${menuOpen ? 'max-h-72 bg-white border-t border-neutral-200' : 'max-h-0 bg-transparent border-t border-transparent'}`}>
+          <div className="flex flex-col px-6 py-5 gap-5">
+            <Link href="/collection" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Collections</Link>
+            <Link href="/new-in" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>New In</Link>
+            <Link href="/about" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>About</Link>
+            {user ? (
+              <>
+                <Link href="/account" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Account</Link>
+                <button
+                  onClick={() => { setMenuOpen(false); signOut().then(() => { }) }}
+                  className="text-[11px] tracking-widest uppercase text-neutral-400 text-left"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <Link href="/sign-in" className="text-[11px] tracking-widest uppercase text-black" onClick={() => setMenuOpen(false)}>Sign In</Link>
+            )}
+          </div>
+        </div>
+      </nav>
+      <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   )
 }

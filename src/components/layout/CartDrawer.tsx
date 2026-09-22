@@ -4,9 +4,11 @@ import { useRef } from 'react'
 import Link from 'next/link'
 import { useCart } from '@/lib/cartContext'
 import { useGsapPanel } from '@/lib/useGsapPanel'
+import { useConvexAuth } from 'convex/react'
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQty, total, count } = useCart()
+  const { isAuthenticated } = useConvexAuth()
   const overlayRef = useRef<HTMLDivElement>(null)
   const drawerRef = useRef<HTMLDivElement>(null)
   useGsapPanel(isOpen, drawerRef, overlayRef, { from: 'right' })
@@ -83,7 +85,7 @@ export function CartDrawer() {
               <span className="text-[11px] tracking-widest uppercase">Total</span>
               <span className="font-serif text-xl">${total.toFixed(2)} CAD</span>
             </div>
-            <Link href="/checkout" onClick={closeCart} className="block w-full bg-ink text-paper text-[11px] tracking-widest uppercase text-center py-4 hover:bg-gray-900 transition-colors">
+            <Link href={isAuthenticated ? "/checkout" : "/sign-in?redirect_url=/checkout"} onClick={closeCart} className="block w-full bg-ink text-paper text-[11px] tracking-widest uppercase text-center py-4 hover:bg-gray-900 transition-colors">
               Checkout →
             </Link>
             <Link href="/cart" onClick={closeCart} className="block w-full border border-border text-[11px] tracking-widest uppercase text-center py-3 text-muted hover:border-ink hover:text-ink transition-colors">

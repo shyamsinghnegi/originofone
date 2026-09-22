@@ -39,7 +39,7 @@ export function HomeProductSection({ eyebrow, title, viewAllHref, filter, limit 
       <div className="flex items-baseline justify-between mb-8">
         <div>
           <p className="text-[11px] tracking-widest uppercase text-neutral-400 mb-2">{eyebrow}</p>
-          <h2 className="font-serif text-4xl md:text-5xl text-black">{title}</h2>
+          <h2 className="font-serif text-3xl md:text-5xl text-black">{title}</h2>
         </div>
         <Link href={viewAllHref} className="text-[11px] tracking-widest uppercase text-neutral-500 hover:text-black transition-colors link-underline">
           View All →

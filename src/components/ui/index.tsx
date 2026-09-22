@@ -252,12 +252,12 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
       </div>
 
       {/* ── Card text ── */}
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-2 mt-2">
         <div className="min-w-0">
-          <p className="text-[13px] text-black truncate">{name}</p>
-          <div className="flex items-center gap-2">
-            {originalPrice && <span className="text-[12px] text-neutral-400 line-through">${originalPrice}</span>}
-            <span className="text-[12px] text-neutral-500">${price} CAD</span>
+          <p className="text-[11px] md:text-[12px] text-black line-clamp-2 font-medium">{name}</p>
+          <div className="flex items-center gap-1.5 md:gap-2 mt-0.5">
+            {originalPrice && <span className="text-[10px] md:text-[11px] text-neutral-400 line-through">${originalPrice}</span>}
+            <span className="text-[10px] md:text-[11px] text-neutral-500">${price} CAD</span>
           </div>
         </div>
         {productId && variants && variants.length > 0 && (
@@ -278,46 +278,54 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
 export function Footer() {
   return (
     <footer className="border-t border-neutral-200 bg-white">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-8 px-6 md:px-10 py-12">
-        <div className="col-span-2 md:col-span-1">
+      <div className="px-6 md:px-10 py-12">
+        <div className="mb-10 md:mb-0 md:hidden">
           <p className="font-serif text-base tracking-[0.2em] uppercase mb-3 text-black">Origin of One</p>
-          <p className="text-[12px] text-neutral-500 leading-relaxed max-w-[200px]">
+          <p className="text-[12px] text-neutral-500 leading-relaxed max-w-70">
             Premium winter clothing for Canadians. Made with care. Built to last.
           </p>
         </div>
-        <div>
-          <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Shop</p>
-          {[
-            ['New Arrivals', '/new-in'],
-            ['Outerwear', '/collection/outerwear'],
-            ['Knitwear', '/collection/knitwear'],
-            ['Accessories', '/collection/accessories'],
-            ['Sale', '/collection/all'],
-          ].map(([label, href]) => (
-            <a key={label} href={href} className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{label}</a>
-          ))}
-        </div>
-        <div>
-          <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Help</p>
-          {[
-            ['Sizing Guide', '/sizing-guide'],
-            ['Shipping Info', '/shipping-returns'],
-            ['Returns', '/shipping-returns'],
-            ['FAQ', '/faq'],
-            ['Contact', '/contact'],
-          ].map(([label, href]) => (
-            <a key={label} href={href} className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{label}</a>
-          ))}
-        </div>
-        <div>
-          <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Company</p>
-          {['Our Story', 'Sustainability', 'Careers', 'Press'].map(l => (
-            <a key={l} href="/about" className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{l}</a>
-          ))}
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-8">
+          <div className="hidden md:block">
+            <p className="font-serif text-base tracking-[0.2em] uppercase mb-3 text-black">Origin of One</p>
+            <p className="text-[12px] text-neutral-500 leading-relaxed max-w-50">
+              Premium winter clothing for Canadians. Made with care. Built to last.
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Shop</p>
+            {[
+              ['New Arrivals', '/new-in'],
+              ['Outerwear', '/collection/outerwear'],
+              ['Knitwear', '/collection/knitwear'],
+              ['Accessories', '/collection/accessories'],
+              ['Sale', '/collection/all'],
+            ].map(([label, href]) => (
+              <a key={label} href={href} className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{label}</a>
+            ))}
+          </div>
+          <div>
+            <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Help</p>
+            {[
+              ['Sizing Guide', '/sizing-guide'],
+              ['Shipping Info', '/shipping-returns'],
+              ['Returns', '/shipping-returns'],
+              ['FAQ', '/faq'],
+              ['Contact', '/contact'],
+            ].map(([label, href]) => (
+              <a key={label} href={href} className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{label}</a>
+            ))}
+          </div>
+          <div>
+            <p className="text-[11px] tracking-widest uppercase text-neutral-500 mb-4 font-medium">Company</p>
+            {['Our Story', 'Sustainability', 'Careers', 'Press'].map(l => (
+              <a key={l} href="/about" className="block text-[12px] text-neutral-500 hover:text-black transition-colors mb-2 link-underline">{l}</a>
+            ))}
+          </div>
         </div>
       </div>
       <div className="border-t border-neutral-200 px-6 md:px-10 py-4 flex justify-between items-center">
-        <span className="text-[11px] text-neutral-400">© 2025 Origin of One. Canada.</span>
+        <span className="text-[11px] text-neutral-400">© {new Date().getFullYear()} Origin of One. Canada.</span>
         <span className="text-[11px] text-neutral-400 flex gap-3">
           <a href="/privacy" className="hover:text-black transition-colors">Privacy</a>
           <a href="/terms" className="hover:text-black transition-colors">Terms</a>

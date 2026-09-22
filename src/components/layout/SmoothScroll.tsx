@@ -13,14 +13,15 @@ export function SmoothScroll() {
     })
     setLenis(lenis)
 
+    let rafId: number
     function raf(time: number) {
-      lenis.raf(time * 1000)
+      lenis.raf(time)
+      rafId = requestAnimationFrame(raf)
     }
-    gsap.ticker.add(raf)
-    gsap.ticker.lagSmoothing(0)
+    rafId = requestAnimationFrame(raf)
 
     return () => {
-      gsap.ticker.remove(raf)
+      cancelAnimationFrame(rafId)
       lenis.destroy()
       setLenis(null)
     }

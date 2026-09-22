@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { useCart } from '@/lib/cartContext'
 import { Footer } from '@/components/ui'
+import { useConvexAuth } from 'convex/react'
 
 export default function CartPage() {
   const { items, removeItem, updateQty, total, count } = useCart()
+  const { isAuthenticated } = useConvexAuth()
 
   return (
     <>
@@ -97,7 +99,7 @@ export default function CartPage() {
                 <span className="font-serif text-2xl">${(total * 1.13).toFixed(2)} CAD</span>
               </div>
             </div>
-            <Link href="/checkout" className="block w-full bg-ink text-paper text-[11px] tracking-widest uppercase text-center py-4 hover:bg-gray-900 transition-colors mb-3">
+            <Link href={isAuthenticated ? "/checkout" : "/sign-in?redirect_url=/checkout"} className="block w-full bg-ink text-paper text-[11px] tracking-widest uppercase text-center py-4 hover:bg-gray-900 transition-colors mb-3">
               Proceed to Checkout →
             </Link>
             <Link href="/collection/all" className="block w-full border border-border text-[11px] tracking-widest uppercase text-center py-3 text-muted hover:border-ink hover:text-ink transition-colors">

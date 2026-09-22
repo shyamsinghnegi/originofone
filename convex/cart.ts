@@ -82,6 +82,49 @@ export const upsertItem = mutation({
   },
 });
 
+export const mergeLocalCart = mutation({
+  args: { items: v.array(cartItemSchema) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) throw new Error("User not found");
+
+    if (args.items.length === 0) return;
+
+    const cart = await getOrCreateCart(ctx, user._id);
+    let newItems = [...cart.items];
+
+    for (const localItem of args.items) {
+      const existingIndex = newItems.findIndex(
+        (i: any) =>
+          i.productId === localItem.productId &&
+          i.color === localItem.color &&
+          i.size === localItem.size
+      );
+
+      if (existingIndex !== -1) {
+        newItems[existingIndex] = {
+          ...newItems[existingIndex],
+          quantity: newItems[existingIndex].quantity + localItem.quantity,
+        };
+      } else {
+        newItems.push(localItem);
+      }
+    }
+
+    await ctx.db.patch(cart._id, {
+      items: newItems,
+      lastUpdated: Date.now(),
+      remindersSent: 0,
+      lastRemindedAt: undefined,
+    });
+  },
+});
+
 export const updateQuantity = mutation({
   args: {
     productId: v.id("products"),

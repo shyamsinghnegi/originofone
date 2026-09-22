@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useQuery, useMutation, useConvexAuth } from 'convex/react'
 import { api } from '@/../convex/_generated/api'
 import { Id } from '@/../convex/_generated/dataModel'
@@ -48,9 +48,51 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const upsertItem  = useMutation(api.cart.upsertItem)
   const removeConvex = useMutation(api.cart.removeItem)
   const updateConvex = useMutation(api.cart.updateQuantity)
+  const mergeLocalCart = useMutation(api.cart.mergeLocalCart)
 
   const [localItems, setLocalItems] = useState<CartItem[]>([])
   const [isOpen, setIsOpen] = useState(false)
+  const [hasHydrated, setHasHydrated] = useState(false)
+
+  // Load from local storage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('localCart')
+      if (stored) {
+        setLocalItems(JSON.parse(stored))
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    setHasHydrated(true)
+  }, [])
+
+  // Save to local storage on change
+  useEffect(() => {
+    if (hasHydrated) {
+      localStorage.setItem('localCart', JSON.stringify(localItems))
+    }
+  }, [localItems, hasHydrated])
+
+  // Merge on login
+  useEffect(() => {
+    if (isAuthenticated && localItems.length > 0) {
+      const itemsToMerge = localItems.map(i => ({
+        productId: i.productId as Id<'products'>,
+        slug: i.slug,
+        name: i.name,
+        price: i.price,
+        quantity: i.qty,
+        color: i.color,
+        size: i.size,
+        image: i.image,
+      }))
+      
+      mergeLocalCart({ items: itemsToMerge }).then(() => {
+        setLocalItems([])
+      }).catch(console.error)
+    }
+  }, [isAuthenticated, localItems, mergeLocalCart])
 
   const items: CartItem[] = isAuthenticated && convexCart
     ? convexCart.items.map((i) => ({

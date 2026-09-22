@@ -46,6 +46,7 @@ function SlideInner({ content, index, total, isFirst, isRightSplit, isLastSlide 
         backgroundImage:
           'repeating-linear-gradient(0deg,transparent,transparent 79px,rgba(255,255,255,1) 79px,rgba(255,255,255,1) 80px),' +
           'repeating-linear-gradient(90deg,transparent,transparent 79px,rgba(255,255,255,1) 79px,rgba(255,255,255,1) 80px)',
+        backgroundPosition: '0 20px',
       }} />
 
       {/* Placeholder figure */}
@@ -191,7 +192,7 @@ export default function HomePage() {
           <div className="flex justify-center gap-1 mb-6">
             {[...Array(5)].map((_, i) => <span key={i} className="text-neutral-400 text-sm">★</span>)}
           </div>
-          <blockquote className="font-serif text-3xl md:text-4xl lg:text-5xl italic leading-[1.2] max-w-2xl mx-auto mb-6 text-black">"The only coat I've needed for three Canadian winters."</blockquote>
+          <blockquote className="font-serif text-2xl md:text-4xl lg:text-5xl italic leading-[1.2] max-w-2xl mx-auto mb-6 text-black">"The only coat I've needed for three Canadian winters."</blockquote>
           <p className="text-[11px] tracking-widest uppercase text-neutral-500">— Verified Customer, Toronto ON</p>
         </section>
 

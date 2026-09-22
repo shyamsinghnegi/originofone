@@ -15,6 +15,7 @@ import { SmoothScroll } from '@/components/layout/SmoothScroll'
 import { ZoomLock } from '@/components/layout/ZoomLock'
 import { UserSync } from '@/components/layout/UserSync'
 import { PageTransition } from '@/components/layout/PageTransition'
+import { ScrollToTop } from '@/components/layout/ScrollToTop'
 
 const editorial = DM_Serif_Display({
   weight: ['400'],
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <UserSync />
                   <ZoomLock />
                   <SmoothScroll />
+                  <ScrollToTop />
                   <Nav />
                   <PendingPaymentBanner />
                   <CartDrawer />

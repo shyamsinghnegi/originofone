@@ -10,6 +10,8 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   const isFirstRun = useRef(true)
 
   useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+    
     if (isFirstRun.current) {
       isFirstRun.current = false
       return
@@ -19,7 +21,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     gsap.fromTo(
       el,
       { autoAlpha: 0, y: 16 },
-      { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power3.out', overwrite: true }
+      { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power3.out', overwrite: true, clearProps: 'transform' }
     )
   }, [pathname])
 
