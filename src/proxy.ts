@@ -19,21 +19,21 @@ function buildCsp(nonce: string): string {
   // allowlist, which would block it. 'unsafe-eval' is dev-only (React debugging).
   const scriptSrc =
     `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ""} ` +
-    "https://*.clerk.accounts.dev https://js.stripe.com https://challenges.cloudflare.com";
+    "https://*.clerk.accounts.dev https://*.clerk.com https://js.stripe.com https://challenges.cloudflare.com";
 
   return [
     "default-src 'self'",
     scriptSrc,
     // Some browsers use script-src-elem for <script> element loads; mirror it
     // explicitly so the host allowlist is honored for injected SDK scripts.
-    `script-src-elem 'self' 'nonce-${nonce}' https://*.clerk.accounts.dev https://js.stripe.com https://challenges.cloudflare.com`,
+    `script-src-elem 'self' 'nonce-${nonce}' https://*.clerk.accounts.dev https://*.clerk.com https://js.stripe.com https://challenges.cloudflare.com`,
     // unsafe-inline required for style attributes (React inline styles → style="...")
     "style-src 'self' 'unsafe-inline'",
     // Fonts are self-hosted via next/font — no external font CDN needed
     "font-src 'self'",
-    "img-src 'self' data: blob: https://images.unsplash.com https://plus.unsplash.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://img.clerk.com",
-    "connect-src 'self' wss://*.convex.cloud https://*.convex.cloud https://*.clerk.accounts.dev https://clerk.accounts.dev https://api.stripe.com wss://ppm.stripe.com https://challenges.cloudflare.com https://*.r2.dev https://*.r2.cloudflarestorage.com",
-    "frame-src https://js.stripe.com https://hooks.stripe.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
+    "img-src 'self' data: blob: https://images.unsplash.com https://plus.unsplash.com https://images.pexels.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://img.clerk.com",
+    "connect-src 'self' wss://*.convex.cloud https://*.convex.cloud https://*.clerk.accounts.dev https://clerk.accounts.dev https://*.clerk.com https://api.stripe.com wss://ppm.stripe.com https://challenges.cloudflare.com https://*.r2.dev https://*.r2.cloudflarestorage.com",
+    "frame-src https://js.stripe.com https://hooks.stripe.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com",
     "frame-ancestors 'none'",
     "worker-src blob: 'self'",
   ].join("; ");
