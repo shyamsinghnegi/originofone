@@ -109,10 +109,10 @@ body {
 }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: var(--paper); }
-::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #000000; }
+::-webkit-scrollbar-thumb { background: #f5f5f5; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #ffffff; }
 
 /* ── Accordion ── */
 .accordion-content {
@@ -137,6 +137,7 @@ body {
   background: var(--paper);
   z-index: 201;
   display: flex; flex-direction: column;
+  visibility: hidden;
 }
 
 /* ── Nav transitions ── */

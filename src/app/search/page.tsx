@@ -131,9 +131,9 @@ function SearchResults() {
           </form>
         </div>
 
-        {/* Filter strip */}
-        <div className="sticky top-15 z-30 bg-paper/90 backdrop-blur-md py-3 w-full border-b border-black/5">
-          <div className="flex items-center justify-between px-6 md:px-12 w-full">
+        {/* Filter strip + category pills — one continuous grey band */}
+        <div className="sticky top-15 z-30 bg-neutral-200/95 backdrop-blur-md pt-4 pb-3 w-full border-b border-black/5">
+          <div className="flex items-center justify-between px-6 md:px-12 w-full mb-3">
             <div className="text-[11px] md:text-[11px] font-medium tracking-widest uppercase text-ink">
               {!initialQ
                 ? 'Enter a search term'
@@ -154,26 +154,25 @@ function SearchResults() {
               Filters
             </button>
           </div>
-        </div>
 
-        {/* Category pills */}
-        {initialQ && (
-          <div className="px-6 md:px-12 py-4 bg-neutral-200 border-b border-black/5 overflow-x-auto" data-lenis-prevent="true">
-            <div className="flex gap-2 w-max">
-              {CATEGORIES.map(c => (
-                <button
-                  key={c}
-                  onClick={() => setActiveCategory(c)}
-                  className={`px-4 h-8 rounded-full text-[12px] whitespace-nowrap transition-colors ${
-                    activeCategory === c ? 'bg-ink text-paper' : 'bg-white border border-black/10 text-ink hover:border-black/30'
-                  }`}
-                >
-                  {c === 'All' ? 'View all' : c}
-                </button>
-              ))}
+          {initialQ && (
+            <div className="px-6 md:px-12 overflow-x-auto" data-lenis-prevent="true">
+              <div className="flex gap-2 w-max">
+                {CATEGORIES.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setActiveCategory(c)}
+                    className={`px-4 h-8 rounded-full text-[12px] whitespace-nowrap transition-colors ${
+                      activeCategory === c ? 'bg-ink text-paper' : 'bg-white border border-black/10 text-ink hover:border-black/30'
+                    }`}
+                  >
+                    {c === 'All' ? 'View all' : c}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Grid */}
         <div className="px-6 md:px-12 py-8 min-h-screen bg-neutral-200">
@@ -221,11 +220,11 @@ function SearchResults() {
       {/* Filter drawer */}
       <div
         ref={filterBackdropRef}
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-200"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-200 invisible opacity-0"
         style={{ pointerEvents: filterOpen ? 'auto' : 'none' }}
         onClick={() => setFilterOpen(false)}
       />
-      <div ref={filterPanelRef} className="fixed top-0 right-0 h-full w-105 max-w-[100vw] bg-paper z-201 flex flex-col" style={{ pointerEvents: filterOpen ? 'auto' : 'none' }}>
+      <div ref={filterPanelRef} className="fixed top-0 right-0 h-full w-105 max-w-[100vw] bg-paper z-201 flex flex-col invisible" style={{ pointerEvents: filterOpen ? 'auto' : 'none' }}>
         <div className="flex flex-col items-center justify-center py-4 border-b border-black/10 relative">
           <h2 className="text-[11px] font-medium tracking-widest uppercase mb-0.5">Filter & Sort</h2>
           <p className="text-[10px] text-muted">{filtered.length} Results</p>

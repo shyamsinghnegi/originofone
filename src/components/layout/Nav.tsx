@@ -114,24 +114,24 @@ export function Nav() {
           </button>
 
           {/* Account — shows initials bubble if signed in, otherwise icon */}
-          {isLoaded && (
-            user ? (
-              <Link href="/account" className={`hidden md:flex items-center justify-center transition-colors ${iconClasses}`} aria-label={initials ? `Account (${initials})` : 'Account'}>
-                {initials ? (
-                  <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-medium border ${isTransparent ? 'border-white/60 text-white' : 'border-neutral-300 text-neutral-600'}`}>
-                    {initials.toUpperCase()}
-                  </span>
-                ) : (
-                  <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                  </svg>
-                )}
-              </Link>
-            ) : (
-              <Link href="/sign-in" className={`hidden md:block text-[11px] tracking-widest uppercase transition-colors ${linkClasses}`}>
-                Sign In
-              </Link>
-            )
+          {!isLoaded ? (
+            <div className="hidden md:block w-8 h-8 rounded-full animate-pulse bg-current opacity-10" aria-hidden="true" />
+          ) : user ? (
+            <Link href="/account" className={`hidden md:flex items-center justify-center transition-colors ${iconClasses}`} aria-label={initials ? `Account (${initials})` : 'Account'}>
+              {initials ? (
+                <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-medium border ${isTransparent ? 'border-white/60 text-white' : 'border-neutral-300 text-neutral-600'}`}>
+                  {initials.toUpperCase()}
+                </span>
+              ) : (
+                <svg width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.2" viewBox="0 0 24 24">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                </svg>
+              )}
+            </Link>
+          ) : (
+            <Link href="/sign-in" className={`hidden md:block text-[11px] tracking-widest uppercase transition-colors ${linkClasses}`}>
+              Sign In
+            </Link>
           )}
 
           {/* Cart */}

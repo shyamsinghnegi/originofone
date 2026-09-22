@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { api } from '@/../convex/_generated/api'
 import { useCachedQuery } from '@/lib/useCachedQuery'
-import { COLOR_TO_BG } from '@/components/ui'
+import { studioBackdropFor } from '@/components/ui'
 import { categoryToSlug } from '@/components/ProductGridPage'
 
 const COLLECTIONS = [
@@ -23,17 +23,16 @@ export default function CollectionsPage() {
           <h1 className="font-serif text-3xl md:text-4xl text-black">Collections</h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-neutral-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-3 gap-y-10 p-3 bg-neutral-200">
           {COLLECTIONS.map(c => {
             const withPhoto = products?.find(p => p.category === c.label && p.images[0])
-            const match = withPhoto ?? products?.find(p => p.category === c.label)
             const cover = withPhoto?.images[0]
-            const bg = COLOR_TO_BG[match?.variants[0]?.color ?? ''] ?? '#d8d8d8'
+            const backdrop = studioBackdropFor(c.label)
             return (
               <Link key={c.label} href={`/collection/${categoryToSlug(c.label)}`} className="group block">
                 <div
                   className="relative aspect-5/4 overflow-hidden rounded-xl"
-                  style={{ background: bg }}
+                  style={{ background: backdrop.bg }}
                 >
                   {cover && (
                     // eslint-disable-next-line @next/next/no-img-element

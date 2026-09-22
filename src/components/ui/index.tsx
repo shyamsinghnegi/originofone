@@ -83,33 +83,31 @@ export const COLOR_MAP: Record<string, string> = {
   'Tan': '#c4a882',
 }
 
-// Complementary/contrasting panel colors — chosen to make the garment pop
-// against its card background (color-wheel opposites or high-contrast
-// neutrals), not a tinted shade of the garment's own color. Bright/light
-// shades, not deep saturated blocks — closer to a pastel backdrop.
+// Greyscale panel colors (black/grey/white) — a neutral backdrop family
+// instead of a garment-matched or complementary color.
 export const COLOR_TO_BG: Record<string, string> = {
-  'Charcoal Black': '#f0c4a8',   // near-black garment → warm peach pop
-  'Off-White / Bone': '#b8d4ec', // warm neutral garment → light sky blue
-  'Concrete Grey': '#e8c9a0',    // cool grey → warm sand
-  'Dry Olive': '#e0b8d4',        // olive (yellow-green) → light orchid
-  'Washed Sand': '#a8d4dc',      // warm sand → light teal
+  'Charcoal Black': '#e0e0e0',
+  'Off-White / Bone': '#d4d4d4',
+  'Concrete Grey': '#ececec',
+  'Dry Olive': '#c8c8c8',
+  'Washed Sand': '#dcdcdc',
 
-  'Black': '#f4b8a0',            // black garment → light terracotta
-  'Charcoal': '#f0cc94',         // dark neutral → light amber
-  'Stone Grey': '#dcb8d0',       // cool-warm grey → light plum
-  'Light Grey': '#b8c0e8',       // light neutral → light periwinkle
-  'Dark Grey': '#f0bca0',        // dark neutral → light rust
-  'Camel': '#a8d8e0',            // warm tan → light teal
-  'White': '#a8c4f0',            // white garment → bright light blue
-  'Cream': '#b0c0ec',            // warm cream → light powder blue
-  'Ivory': '#b8ccec',            // warm ivory → light slate-blue
-  'Navy': '#f0cc94',             // blue garment → light amber (true complement)
-  'Forest': '#f0b8cc',           // green garment → light pink (true complement)
-  'Burgundy': '#a8e0cc',         // red garment → light mint (true complement)
-  'Taupe': '#a8ccec',            // warm taupe → light blue
-  'Sand': '#b0c8ec',             // warm sand → light blue
-  'Smoke': '#ecc8a0',            // neutral grey → light tan
-  'Tan': '#a8c0e0',              // warm tan → light periwinkle
+  'Black': '#e8e8e8',
+  'Charcoal': '#d0d0d0',
+  'Stone Grey': '#e4e4e4',
+  'Light Grey': '#cccccc',
+  'Dark Grey': '#e0e0e0',
+  'Camel': '#d8d8d8',
+  'White': '#c4c4c4',
+  'Cream': '#d4d4d4',
+  'Ivory': '#dcdcdc',
+  'Navy': '#e8e8e8',
+  'Forest': '#d0d0d0',
+  'Burgundy': '#e4e4e4',
+  'Taupe': '#d8d8d8',
+  'Sand': '#dcdcdc',
+  'Smoke': '#c8c8c8',
+  'Tan': '#e0e0e0',
 }
 
 // ── Studio backdrops ─────────────────────────────────────
@@ -118,13 +116,13 @@ export const COLOR_TO_BG: Record<string, string> = {
 // reads worse than a consistent studio look, same idea as a real shoot
 // reusing the same backdrop across a whole product line.
 const STUDIO_BACKDROPS = [
-  // Deep teal-blue spotlight studio — dark, needs a light figure tint
-  { bg: 'radial-gradient(ellipse 140% 90% at 50% 105%, #2a6b78 0%, #163f4d 45%, #0d2530 100%)', figureTint: 'rgba(255,255,255,0.3)' },
-  // Soft cloudy sky-blue studio — light, needs a dark figure tint
-  { bg: 'linear-gradient(160deg, #cfe0ea 0%, #a9c7d8 50%, #8fb4c9 100%)', figureTint: 'rgba(0,0,0,0.18)' },
+  // Dark charcoal spotlight studio — dark, needs a light figure tint
+  { bg: 'radial-gradient(ellipse 140% 90% at 50% 105%, #4a4a4a 0%, #262626 45%, #131313 100%)', figureTint: 'rgba(255,255,255,0.3)' },
+  // Soft light grey studio — light, needs a dark figure tint
+  { bg: 'linear-gradient(160deg, #f2f2f2 0%, #dcdcdc 50%, #c4c4c4 100%)', figureTint: 'rgba(0,0,0,0.18)' },
 ]
 
-function studioBackdropFor(seed: string): typeof STUDIO_BACKDROPS[number] {
+export function studioBackdropFor(seed: string): typeof STUDIO_BACKDROPS[number] {
   let hash = 0
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0
   return STUDIO_BACKDROPS[Math.abs(hash) % STUDIO_BACKDROPS.length]

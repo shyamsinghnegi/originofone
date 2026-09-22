@@ -48,7 +48,7 @@ export function useGsapPanel(
   useLayoutEffect(() => {
     const panel = panelRef.current
     const backdrop = backdropRef?.current
-    if (panel) gsap.set(panel, isOpen ? shownVars(from) : hiddenVars(from))
+    if (panel) gsap.set(panel, { visibility: 'visible', ...(isOpen ? shownVars(from) : hiddenVars(from)) })
     if (backdrop) gsap.set(backdrop, { autoAlpha: isOpen ? 1 : 0 })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

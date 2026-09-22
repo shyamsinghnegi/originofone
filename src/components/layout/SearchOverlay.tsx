@@ -71,7 +71,7 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
       {/* Backdrop */}
       <div
         ref={backdropRef}
-        className="fixed inset-0 z-98 bg-black/30 backdrop-blur-[2px]"
+        className="fixed inset-0 z-98 bg-black/30 backdrop-blur-[2px] invisible opacity-0"
         style={{ top: 'var(--nav-height, 60px)', pointerEvents: isOpen ? 'auto' : 'none' }}
         onClick={onClose}
         aria-hidden="true"
@@ -83,7 +83,7 @@ export function SearchOverlay({ isOpen, onClose }: Props) {
         role="dialog"
         aria-label="Search"
         aria-modal="true"
-        className="fixed left-0 right-0 z-99 bg-paper shadow-xl"
+        className="fixed left-0 right-0 z-99 bg-paper shadow-xl invisible opacity-0"
         style={{ top: 'var(--nav-height, 60px)', pointerEvents: isOpen ? 'auto' : 'none' }}
       >
         {/* Input row */}
