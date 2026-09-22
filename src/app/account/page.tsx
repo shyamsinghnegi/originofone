@@ -279,32 +279,67 @@ export default function AccountPage() {
                   </button>
                 </div>
               )}
-              {orders?.map(order => (
-                <div key={order._id} className="border border-neutral-200">
-                  <div className="flex items-start justify-between px-5 py-4 border-b border-neutral-100">
-                    <div>
-                      <p className="text-[12px] text-black mb-0.5 font-medium">{order._id.slice(-8).toUpperCase()}</p>
-                      <p className="text-[11px] text-neutral-400">
-                        {new Date(order._creationTime).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}
+              {orders?.map(order => {
+                const canCancelOnline = order.status === 'paid' || order.status === 'processing'
+                const canRequestReturn = (order.status === 'shipped' || order.status === 'delivered') && !order.returnRequested
+                return (
+                  <div key={order._id} className="border border-neutral-200">
+                    <button
+                      onClick={() => router.push(`/account/orders/${order._id}`)}
+                      className="group w-full flex items-start justify-between px-5 py-4 border-b border-neutral-100 text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                    >
+                      <div>
+                        <p className="text-[12px] text-black mb-0.5 font-medium">{order._id.slice(-8).toUpperCase()}</p>
+                        <p className="text-[11px] text-neutral-400">
+                          {new Date(order._creationTime).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] tracking-widest uppercase px-3 py-1 ${STATUS_STYLES[order.status] ?? 'text-neutral-500 bg-neutral-100'}`}>
+                          {order.status}
+                        </span>
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" className="text-neutral-400 group-hover:text-black group-hover:translate-x-0.5 transition-all">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                      </div>
+                    </button>
+                    <div className="px-5 py-4">
+                      {order.items.map((item, i) => (
+                        <p key={i} className="text-[13px] text-black mb-0.5">
+                          {item.name}
+                          <span className="text-neutral-400 ml-2 text-[11px]">{item.color} / {item.size} × {item.quantity}</span>
+                        </p>
+                      ))}
+                      <p className="text-[12px] text-neutral-400 mt-2">
+                        Total: ${order.total.toFixed(2)} CAD
                       </p>
+
+                      {order.returnRequested && (
+                        <p className="text-[11px] text-neutral-500 mt-3 bg-neutral-50 px-3 py-2">
+                          Return requested — we&apos;ll be in touch shortly.
+                        </p>
+                      )}
+
+                      <div className="flex gap-5 mt-3">
+                        <button
+                          onClick={() => router.push(`/account/orders/${order._id}`)}
+                          className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors"
+                        >
+                          View Order →
+                        </button>
+                        {(canCancelOnline || canRequestReturn) && (
+                          <button
+                            onClick={() => router.push(`/account/orders/${order._id}/cancel`)}
+                            className="text-[11px] tracking-widest uppercase border-b border-black pb-0.5 hover:text-neutral-500 hover:border-neutral-500 transition-colors"
+                          >
+                            {canCancelOnline ? 'Cancel Order' : 'Request Return'} →
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <span className={`text-[11px] tracking-widest uppercase px-3 py-1 ${STATUS_STYLES[order.status] ?? 'text-neutral-500 bg-neutral-100'}`}>
-                      {order.status}
-                    </span>
                   </div>
-                  <div className="px-5 py-4">
-                    {order.items.map((item, i) => (
-                      <p key={i} className="text-[13px] text-black mb-0.5">
-                        {item.name}
-                        <span className="text-neutral-400 ml-2 text-[11px]">{item.color} / {item.size} × {item.quantity}</span>
-                      </p>
-                    ))}
-                    <p className="text-[12px] text-neutral-400 mt-2">
-                      Total: ${order.total.toFixed(2)} CAD
-                    </p>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
 
