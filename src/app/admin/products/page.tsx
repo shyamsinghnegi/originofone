@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/../convex/_generated/api";
 import { Id } from "@/../convex/_generated/dataModel";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { VariantEditor, Variant } from "@/components/admin/VariantEditor";
+import { stopLenis, startLenis } from "@/lib/lenis";
 
 const CATEGORIES = ["Outerwear", "Knitwear", "Layering", "Accessories"];
 const FABRICS = ["Wool", "Cashmere", "Merino", "Cotton", "Down", "Leather", "Synthetic"];
@@ -149,6 +151,22 @@ export default function AdminProductsPage() {
 
   const totalStock = (variants: Variant[]) => variants.reduce((s, v) => s + v.stock, 0);
 
+  useEffect(() => {
+    if (!formOpen) return;
+    document.body.style.overflow = "hidden";
+    stopLenis();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") cancelEdit();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      startLenis();
+      document.removeEventListener("keydown", onKey);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formOpen]);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -156,183 +174,243 @@ export default function AdminProductsPage() {
         {!formOpen && (
           <button
             onClick={() => setFormOpen(true)}
-            className="bg-[--color-ink] text-[--color-paper] text-sm px-4 py-2 rounded"
+            className="bg-ink text-paper text-sm px-4 py-2 rounded"
           >
             + New Product
           </button>
         )}
       </div>
 
-      {formOpen && (
-        <form
-          onSubmit={handleSubmit}
-          className="border border-[--color-border] rounded-lg p-6 mb-8 grid gap-5"
+      {formOpen && typeof document !== "undefined" && createPortal(
+        <div
+          onClick={cancelEdit}
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center overflow-y-auto py-10 px-4"
         >
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">{editingId ? "Edit Product" : "New Product"}</h2>
-            <button type="button" onClick={cancelEdit} className="text-xs text-[--color-muted] hover:text-[--color-ink]">
-              Cancel
+          <form
+            onSubmit={handleSubmit}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-paper border border-border rounded-lg p-6 grid gap-5 w-full max-w-6xl shadow-xl"
+          >
+          <div className="flex items-center justify-between pb-4 border-b border-border">
+            <h2 className="text-lg font-[--font-editorial]">{editingId ? "Edit Product" : "New Product"}</h2>
+            <button
+              type="button"
+              onClick={cancelEdit}
+              aria-label="Close"
+              className="text-muted hover:text-ink text-xl leading-none"
+            >
+              ×
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1">
-              <span className="text-xs text-[--color-muted]">Name</span>
-              <input
-                className="border border-[--color-border] rounded px-3 py-2 text-sm outline-none focus:border-[--color-ink]"
-                value={form.name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                required
-              />
-            </label>
-            <label className="grid gap-1">
-              <span className="text-xs text-[--color-muted]">Slug</span>
-              <input
-                className="border border-[--color-border] rounded px-3 py-2 text-sm outline-none focus:border-[--color-ink] font-mono"
-                value={form.slug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  set("slug", slugify(e.target.value));
-                }}
-                required
-              />
-            </label>
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid gap-5 content-start">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="grid gap-1">
+                  <span className="text-xs text-muted">Name</span>
+                  <input
+                    className="border border-border rounded px-3 py-2 text-sm outline-none focus:border-ink"
+                    value={form.name}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-xs text-muted">Slug</span>
+                  <input
+                    className="border border-border rounded px-3 py-2 text-sm outline-none focus:border-ink font-mono"
+                    value={form.slug}
+                    onChange={(e) => {
+                      setSlugTouched(true);
+                      set("slug", slugify(e.target.value));
+                    }}
+                    required
+                  />
+                </label>
+              </div>
 
-          <label className="grid gap-1">
-            <span className="text-xs text-[--color-muted]">Description</span>
-            <textarea
-              className="border border-[--color-border] rounded px-3 py-2 text-sm outline-none focus:border-[--color-ink] resize-none"
-              rows={3}
-              value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-              required
-            />
-          </label>
+              <label className="grid gap-1">
+                <span className="text-xs text-muted">Description</span>
+                <textarea
+                  className="border border-border rounded px-3 py-2 text-sm outline-none focus:border-ink resize-none"
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) => set("description", e.target.value)}
+                  required
+                />
+              </label>
 
-          <div className="grid grid-cols-4 gap-3">
-            <label className="grid gap-1">
-              <span className="text-xs text-[--color-muted]">Price (CAD)</span>
-              <input
-                className="border border-[--color-border] rounded px-3 py-2 text-sm outline-none focus:border-[--color-ink]"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.price}
-                onChange={(e) => set("price", e.target.value)}
-                required
-              />
-            </label>
-            <label className="grid gap-1">
-              <span className="text-xs text-[--color-muted]">Compare-at Price</span>
-              <input
-                className="border border-[--color-border] rounded px-3 py-2 text-sm outline-none focus:border-[--color-ink]"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.compareAtPrice}
-                onChange={(e) => set("compareAtPrice", e.target.value)}
-              />
-            </label>
-            <label className="grid gap-1">
-              <span className="text-xs text-[--color-muted]">Category</span>
-              <select
-                className="border border-[--color-border] rounded px-3 py-2 text-sm outline-none focus:border-[--color-ink] bg-white"
-                value={form.category}
-                onChange={(e) => set("category", e.target.value)}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-1">
-              <span className="text-xs text-[--color-muted]">Fabric</span>
-              <select
-                className="border border-[--color-border] rounded px-3 py-2 text-sm outline-none focus:border-[--color-ink] bg-white"
-                value={form.fabric}
-                onChange={(e) => set("fabric", e.target.value)}
-              >
-                <option value="">—</option>
-                {FABRICS.map((f) => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
-            </label>
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="grid gap-1">
+                  <span className="text-xs text-muted">Price (CAD)</span>
+                  <input
+                    className="border border-border rounded px-3 py-2 text-sm outline-none focus:border-ink"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.price}
+                    onChange={(e) => set("price", e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-xs text-muted">Compare-at Price</span>
+                  <input
+                    className="border border-border rounded px-3 py-2 text-sm outline-none focus:border-ink"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.compareAtPrice}
+                    onChange={(e) => set("compareAtPrice", e.target.value)}
+                  />
+                </label>
+              </div>
 
-          <label className="grid gap-1">
-            <span className="text-xs text-[--color-muted]">Tags (comma-separated — e.g. new-in, men, bestseller)</span>
-            <input
-              className="border border-[--color-border] rounded px-3 py-2 text-sm outline-none focus:border-[--color-ink]"
-              value={form.tags}
-              onChange={(e) => set("tags", e.target.value)}
-            />
-          </label>
+              <div>
+                <span className="text-xs text-muted mb-1.5 block">Category</span>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => set("category", c)}
+                      className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                        form.category === c
+                          ? "bg-ink text-paper border-ink"
+                          : "border-border hover:border-ink"
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          <div>
-            <p className="text-xs text-[--color-muted] mb-2">Images</p>
-            <ImageUploader images={form.images} onChange={(images) => set("images", images)} />
-          </div>
+              <div>
+                <span className="text-xs text-muted mb-1.5 block">Fabric</span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => set("fabric", "")}
+                    className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                      form.fabric === ""
+                        ? "bg-ink text-paper border-ink"
+                        : "border-border hover:border-ink"
+                    }`}
+                  >
+                    —
+                  </button>
+                  {FABRICS.map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => set("fabric", f)}
+                      className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                        form.fabric === f
+                          ? "bg-ink text-paper border-ink"
+                          : "border-border hover:border-ink"
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          <div>
-            <p className="text-xs text-[--color-muted] mb-2">Variants (color / size / stock / SKU)</p>
-            <VariantEditor variants={form.variants} onChange={(variants) => set("variants", variants)} />
+              <label className="grid gap-1">
+                <span className="text-xs text-muted">Tags (comma-separated — e.g. new-in, men, bestseller)</span>
+                <input
+                  className="border border-border rounded px-3 py-2 text-sm outline-none focus:border-ink"
+                  value={form.tags}
+                  onChange={(e) => set("tags", e.target.value)}
+                />
+              </label>
+            </div>
+
+            <div className="grid gap-5 content-start">
+              <div>
+                <p className="text-xs text-muted mb-2">Images</p>
+                <ImageUploader images={form.images} onChange={(images) => set("images", images)} />
+              </div>
+
+              <div>
+                <p className="text-xs text-muted mb-2">Variants (color / size / stock / SKU)</p>
+                <VariantEditor variants={form.variants} onChange={(variants) => set("variants", variants)} />
+              </div>
+            </div>
           </div>
 
           {error && <p className="text-red-600 text-xs">{error}</p>}
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-2 border-t border-border">
             <button
               type="submit"
               disabled={saving}
-              className="bg-[--color-ink] text-[--color-paper] text-sm px-4 py-2 rounded disabled:opacity-50"
+              className="bg-ink text-paper text-sm px-4 py-2 rounded disabled:opacity-50"
             >
               {saving ? "Saving..." : editingId ? "Update Product" : "Create Product"}
             </button>
           </div>
-        </form>
+          </form>
+        </div>,
+        document.body
       )}
 
-      <div className="grid gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {products?.map((product) => (
           <div
             key={product._id}
-            className="border border-[--color-border] rounded-lg px-4 py-3 flex items-center gap-4"
+            className="border border-border rounded-lg overflow-hidden group"
           >
-            <div className="w-12 h-12 rounded bg-[--color-gray-100] overflow-hidden shrink-0">
-              {product.images?.[0] && (
+            <div className="aspect-3/4 bg-gray-100 relative">
+              {product.images?.[0] ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted text-xs">
+                  No image
+                </div>
               )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{product.name}</p>
-              <p className="text-xs text-[--color-muted]">
-                {product.slug} · ${product.price.toFixed(2)} · {totalStock(product.variants)} in stock ·{" "}
-                {product.isActive ? "Active" : "Inactive"}
-              </p>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <button
-                onClick={() => startEdit(product)}
-                className="text-xs px-3 py-1 border border-[--color-border] rounded"
-              >
-                Edit
-              </button>
-              {product.isActive && (
+              {!product.isActive && (
+                <span className="absolute top-2 left-2 bg-black/80 text-white text-[10px] uppercase tracking-wide px-2 py-1 rounded">
+                  Inactive
+                </span>
+              )}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <button
-                  onClick={() => removeProduct({ id: product._id })}
-                  className="text-xs px-3 py-1 border border-red-300 text-red-600 rounded"
+                  onClick={() => startEdit(product)}
+                  className="text-xs px-3 py-1.5 bg-white rounded font-medium"
                 >
-                  Deactivate
+                  Edit
                 </button>
-              )}
+                {product.isActive ? (
+                  <button
+                    onClick={() => removeProduct({ id: product._id })}
+                    className="text-xs px-3 py-1.5 bg-white text-red-600 rounded font-medium"
+                  >
+                    Deactivate
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => updateProduct({ id: product._id, isActive: true })}
+                    className="text-xs px-3 py-1.5 bg-white text-green-700 rounded font-medium"
+                  >
+                    Activate
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="p-3">
+              <p className="text-sm font-medium truncate">{product.name}</p>
+              <p className="text-xs text-muted mt-0.5">
+                ${product.price.toFixed(2)} · {totalStock(product.variants)} in stock
+              </p>
             </div>
           </div>
         ))}
         {products?.length === 0 && (
-          <p className="text-sm text-[--color-muted] text-center py-8">No products yet — create your first one above.</p>
+          <p className="text-sm text-muted text-center py-8 col-span-full">No products yet — create your first one above.</p>
         )}
       </div>
     </div>

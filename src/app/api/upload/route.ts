@@ -3,11 +3,12 @@ import { NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/../convex/_generated/api";
 
-const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-
 export async function POST(req: Request) {
-  const { userId } = await auth();
+  const { userId, getToken } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const token = await getToken({ template: "convex" });
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { fileName, contentType } = await req.json();
   if (!fileName || !contentType) {
@@ -19,13 +20,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unsupported image type" }, { status: 400 });
   }
 
+  const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+  client.setAuth(token);
+
   try {
     const result = await client.action(api.actions.r2.getPresignedUploadUrl, {
       fileName,
       contentType,
     });
     return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Forbidden";
+    return NextResponse.json({ error: message }, { status: 403 });
   }
 }

@@ -89,7 +89,7 @@ export function ImageUploader({ images, onChange }: Props) {
           handleFiles(e.dataTransfer.files);
         }}
         onClick={() => inputRef.current?.click()}
-        className="border-2 border-dashed border-[--color-border] rounded-lg p-6 text-center cursor-pointer hover:border-[--color-ink] transition-colors"
+        className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-ink transition-colors"
       >
         <input
           ref={inputRef}
@@ -99,10 +99,10 @@ export function ImageUploader({ images, onChange }: Props) {
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
-        <p className="text-sm text-[--color-muted]">
+        <p className="text-sm text-muted">
           {uploading ? "Uploading…" : "Click or drag images here"}
         </p>
-        <p className="text-xs text-[--color-muted] mt-1">JPEG, PNG, WebP, or AVIF · up to {MAX_SIZE_MB}MB each</p>
+        <p className="text-xs text-muted mt-1">JPEG, PNG, WebP, or AVIF · up to {MAX_SIZE_MB}MB each</p>
       </div>
 
       {error && <p className="text-red-600 text-xs mt-2">{error}</p>}
@@ -119,7 +119,7 @@ export function ImageUploader({ images, onChange }: Props) {
                 if (dragIndex !== null) moveTo(dragIndex, i);
                 setDragIndex(null);
               }}
-              className="relative aspect-square rounded-lg overflow-hidden border border-[--color-border] group cursor-move"
+              className="relative aspect-square rounded-lg overflow-hidden border border-border group cursor-move"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={url} alt="" className="w-full h-full object-cover" />

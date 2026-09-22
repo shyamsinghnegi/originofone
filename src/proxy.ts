@@ -32,7 +32,7 @@ function buildCsp(nonce: string): string {
     // Fonts are self-hosted via next/font — no external font CDN needed
     "font-src 'self'",
     "img-src 'self' data: blob: https://images.unsplash.com https://plus.unsplash.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://img.clerk.com",
-    "connect-src 'self' wss://*.convex.cloud https://*.convex.cloud https://*.clerk.accounts.dev https://clerk.accounts.dev https://api.stripe.com wss://ppm.stripe.com https://challenges.cloudflare.com",
+    "connect-src 'self' wss://*.convex.cloud https://*.convex.cloud https://*.clerk.accounts.dev https://clerk.accounts.dev https://api.stripe.com wss://ppm.stripe.com https://challenges.cloudflare.com https://*.r2.dev https://*.r2.cloudflarestorage.com",
     "frame-src https://js.stripe.com https://hooks.stripe.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
     "frame-ancestors 'none'",
     "worker-src blob: 'self'",
