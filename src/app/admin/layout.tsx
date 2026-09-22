@@ -36,9 +36,9 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-56 border-r border-[--color-border] shrink-0 py-8 px-6 flex flex-col gap-1">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[--color-muted] mb-4">
+    <div className="min-h-screen flex" style={{ paddingTop: "var(--nav-height, 60px)" }}>
+      <aside className="w-56 border-r border-border shrink-0 py-8 px-6 flex flex-col gap-1 sticky top-15 self-start" style={{ height: "calc(100vh - var(--nav-height, 60px))" }}>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">
           Admin
         </p>
         {[
@@ -49,7 +49,7 @@ export default function AdminLayout({
           <Link
             key={href}
             href={href}
-            className="text-sm py-2 px-3 rounded hover:bg-[--color-border] transition-colors"
+            className="text-sm py-2 px-3 rounded hover:bg-border transition-colors"
           >
             {label}
           </Link>
