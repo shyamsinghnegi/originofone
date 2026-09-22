@@ -203,7 +203,6 @@ function CheckoutInner() {
   const saveAddress = useMutation(api.users.addAddress)
   const createOrder = useMutation(api.orders.create)
   const deleteIfPending = useMutation(api.orders.deleteIfPending)
-  const markPaidByIntentId = useMutation(api.orders.markPaidByIntentId)
   const createPaymentIntent = useAction(api.actions.stripe.createPaymentIntent)
   const resumePaymentIntent = useAction(api.actions.stripe.resumePaymentIntent)
   const resumeOrder = useQuery(
@@ -659,9 +658,8 @@ function CheckoutInner() {
                   }}
                   onNextFromPayment={() => goToStep(3)}
                   onPaid={async () => {
-                    if (paymentIntentId) {
-                      await markPaidByIntentId({ stripePaymentIntentId: paymentIntentId })
-                    }
+                    // Payment is confirmed by Stripe Webhooks (which handle stock deduction and order finalization).
+                    // We can safely redirect the user to confirmation page.
                     router.push(`/confirmation?orderId=${orderId}`)
                   }}
                   shipping={shipping}

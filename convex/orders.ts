@@ -19,7 +19,8 @@ async function priceOrder(
     size: string;
     quantity: number;
   }>,
-  shippingMethod: string
+  shippingMethod: string,
+  discountCode?: string
 ) {
   if (clientItems.length === 0) throw new Error("Cart is empty");
 
@@ -40,6 +41,21 @@ async function priceOrder(
     );
     if (!variant) throw new Error("Selected variant does not exist");
 
+    // Check inventory reservations
+    const activeReservations = await ctx.db
+      .query("inventory_reservations")
+      .withIndex("by_product", (q: any) => q.eq("productId", ci.productId))
+      .filter((q: any) => q.gt(q.field("expiresAt"), Date.now()))
+      .collect();
+
+    const reservedCount = activeReservations
+      .filter((r: any) => r.color === ci.color && r.size === ci.size)
+      .reduce((sum: number, r: any) => sum + r.quantity, 0);
+
+    if (variant.stock - reservedCount < ci.quantity) {
+      throw new Error(`Insufficient stock for ${product.name} (${ci.color}, ${ci.size})`);
+    }
+
     const price = product.price;
     subtotal += price * ci.quantity;
 
@@ -55,14 +71,47 @@ async function priceOrder(
     });
   }
 
+  // Handle promotions
+  let discountAmount = 0;
+  if (discountCode) {
+    const promo = await ctx.db
+      .query("promotions")
+      .withIndex("by_code", (q: any) => q.eq("code", discountCode.toUpperCase()))
+      .unique();
+
+    if (!promo) {
+      throw new Error("Invalid discount code");
+    }
+    if (!promo.isActive) {
+      throw new Error("Discount code is no longer active");
+    }
+    if (promo.expiryDate && promo.expiryDate < Date.now()) {
+      throw new Error("Discount code has expired");
+    }
+    if (promo.usageLimit && promo.timesUsed >= promo.usageLimit) {
+      throw new Error("Discount code usage limit reached");
+    }
+
+    if (promo.type === "percentage") {
+      discountAmount = subtotal * (promo.value / 100);
+    } else {
+      discountAmount = promo.value;
+    }
+    
+    // Ensure discount doesn't exceed subtotal
+    discountAmount = Math.min(discountAmount, subtotal);
+  }
+
+  const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+  
   const shippingCost = SHIPPING_COSTS[shippingMethod];
   if (shippingCost === undefined) throw new Error("Invalid shipping method");
 
-  subtotal = round(subtotal);
-  const tax = round((subtotal + shippingCost) * TAX_RATE);
-  const total = round(subtotal + shippingCost + tax);
+  const finalSubtotal = round(subtotalAfterDiscount);
+  const tax = round((finalSubtotal + shippingCost) * TAX_RATE);
+  const total = round(finalSubtotal + shippingCost + tax);
 
-  return { items, subtotal, shippingCost, tax, total };
+  return { items, subtotal: finalSubtotal, shippingCost, tax, total, discountAmount };
 }
 
 const orderItemSchema = v.object({
@@ -202,6 +251,7 @@ export const create = mutation({
     shippingAddress: shippingAddressSchema,
     shippingMethod: v.string(),
     notes: v.optional(v.string()),
+    discountCode: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -212,7 +262,7 @@ export const create = mutation({
       .unique();
     if (!user) throw new Error("User not found");
 
-    const priced = await priceOrder(ctx, args.items, args.shippingMethod);
+    const priced = await priceOrder(ctx, args.items, args.shippingMethod, args.discountCode);
 
     const orderId = await ctx.db.insert("orders", {
       userId: user._id,
@@ -227,6 +277,28 @@ export const create = mutation({
       total: priced.total,
       notes: args.notes,
     });
+
+    // Create temporary inventory reservations valid for 15 minutes
+    for (const item of priced.items) {
+      await ctx.db.insert("inventory_reservations", {
+        productId: item.productId,
+        color: item.color,
+        size: item.size,
+        quantity: item.quantity,
+        expiresAt: Date.now() + 15 * 60 * 1000, // 15 mins
+        userId: user._id,
+      });
+    }
+
+    if (args.discountCode) {
+      const promo = await ctx.db
+        .query("promotions")
+        .withIndex("by_code", (q: any) => q.eq("code", args.discountCode!.toUpperCase()))
+        .unique();
+      if (promo) {
+        await ctx.db.patch(promo._id, { timesUsed: promo.timesUsed + 1 });
+      }
+    }
 
     await ctx.scheduler.runAfter(
       10 * 60 * 1000,
@@ -352,6 +424,16 @@ async function fulfillOrder(ctx: any, orderId: any) {
 
   await ctx.db.patch(order._id, { status: "paid", paidAt: Date.now() });
   await ctx.runMutation(internal.cart.clear, { userId: order.userId });
+  
+  // Clear any active reservations for this user now that the order is paid
+  const userReservations = await ctx.db
+    .query("inventory_reservations")
+    .filter((q: any) => q.eq(q.field("userId"), order.userId))
+    .collect();
+  for (const res of userReservations) {
+    await ctx.db.delete(res._id);
+  }
+
   await ctx.runMutation(internal.products.decrementStock, {
     items: order.items.map((i: any) => ({
       productId: i.productId,
@@ -384,30 +466,7 @@ export const markPaid = mutation({
   },
 });
 
-export const markPaidByIntentId = mutation({
-  args: { stripePaymentIntentId: v.string() },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthenticated");
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-    if (!user) throw new Error("User not found");
-
-    const order = await ctx.db
-      .query("orders")
-      .withIndex("by_stripe_payment_intent", (q) =>
-        q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
-      )
-      .unique();
-    if (!order) throw new Error("Order not found");
-    if (order.userId !== user._id) throw new Error("Forbidden");
-
-    await fulfillOrder(ctx, order._id);
-    return order._id;
-  },
-});
+// Removed insecure markPaidByIntentId because payment confirmation MUST come from the Stripe Webhook, not the client.
 
 export const markCancelled = mutation({
   args: { stripePaymentIntentId: v.string() },
@@ -517,6 +576,7 @@ export const requestReturn = mutation({
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
     if (!user) throw new Error("User not found");
+    const userId = user._id;
 
     const order = await ctx.db.get(args.id);
     if (!order) throw new Error("Order not found");
@@ -638,3 +698,4 @@ export const analytics = query({
     };
   },
 });
+

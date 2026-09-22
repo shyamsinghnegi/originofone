@@ -99,6 +99,17 @@ html.lenis, html.lenis body {
 }
 .fade-up { animation: fadeUp 0.65s ease forwards; }
 
+/* ── Like Animation ── */
+@keyframes likePop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.animate-like {
+  animation: likePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
 /* ── Image hover zoom ── */
 .img-zoom { overflow: hidden; }
 .img-zoom img,

@@ -3,6 +3,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useQuickAdd } from '@/lib/quickAddContext'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '@/../convex/_generated/api'
+import { useUser } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
+import { Id } from '@/../convex/_generated/dataModel'
 
 
 interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -158,12 +163,31 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
   const [imgIndex, setImgIndex] = useState(0)
   const [hovered,  setHovered]  = useState(false)
   const quickAdd = useQuickAdd()
+  const router = useRouter()
+  const { user } = useUser()
+
+  const wishlist = useQuery(api.wishlist.listMine, user ? undefined : "skip")
+  const toggleWishlist = useMutation(api.wishlist.toggle)
+
+  const isWishlisted = wishlist?.some(w => w.product?._id === productId) ?? false
 
   function handleQuickAdd(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
     if (!productId || !variants || variants.length === 0) return
     quickAdd.open({ productId, slug: id, name, price, originalPrice, image, variants })
+  }
+
+  function handleToggleWishlist(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!user) {
+      router.push('/sign-in')
+      return
+    }
+    if (productId) {
+      toggleWishlist({ productId: productId as Id<"products"> })
+    }
   }
 
   const slideBgs: string[] = slides ?? []
@@ -204,6 +228,25 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
             {badge}
           </span>
         )}
+
+        {/* Wishlist Heart */}
+        <button
+          onClick={handleToggleWishlist}
+          aria-label="Toggle wishlist"
+          className={`absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center transition-colors ${
+            isWishlisted ? 'text-red-500 animate-like' : 'text-black/40 hover:text-black/80'
+          }`}
+        >
+          {isWishlisted ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+            </svg>
+          )}
+        </button>
 
         {/* ── Slide indicators (dots) ── */}
         {total > 1 && (
