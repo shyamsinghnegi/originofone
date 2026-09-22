@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -188,6 +188,14 @@ export const getById = query({
   },
 });
 
+// For system-triggered calls (scheduled actions) that run with no end-user
+// identity — the caller must have already authorized the request before
+// scheduling, e.g. requestCancellation/requestReturn checking order ownership.
+export const getByIdInternal = internalQuery({
+  args: { id: v.id("orders") },
+  handler: async (ctx, args) => ctx.db.get(args.id),
+});
+
 export const create = mutation({
   args: {
     items: v.array(orderItemInputSchema),
@@ -292,6 +300,7 @@ export const getForResume = query({
       shippingCost: order.shippingCost,
       tax: order.tax,
       total: order.total,
+      stripePaymentIntentId: order.stripePaymentIntentId,
     };
   },
 });
@@ -341,7 +350,7 @@ async function fulfillOrder(ctx: any, orderId: any) {
   if (!order) return null;
   if (order.status !== "pending") return order;
 
-  await ctx.db.patch(order._id, { status: "paid" });
+  await ctx.db.patch(order._id, { status: "paid", paidAt: Date.now() });
   await ctx.runMutation(internal.cart.clear, { userId: order.userId });
   await ctx.runMutation(internal.products.decrementStock, {
     items: order.items.map((i: any) => ({
@@ -350,6 +359,9 @@ async function fulfillOrder(ctx: any, orderId: any) {
       size: i.size,
       quantity: i.quantity,
     })),
+  });
+  await ctx.scheduler.runAfter(0, internal.actions.email.sendOrderConfirmation, {
+    orderId: order._id,
   });
   return order;
 }
@@ -363,7 +375,11 @@ export const markPaid = mutation({
         q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
       )
       .unique();
-    if (!order) throw new Error("Order not found");
+    // No matching order — most likely a superseded PaymentIntent from a
+    // resumed checkout (the order's stripePaymentIntentId was overwritten by
+    // a newer intent). Nothing to fulfill; return quietly instead of
+    // throwing so Stripe doesn't retry this webhook indefinitely.
+    if (!order) return null;
     return fulfillOrder(ctx, order._id);
   },
 });
@@ -439,5 +455,186 @@ export const updateTracking = mutation({
       tracking: args.tracking,
       status: "shipped",
     });
+    await ctx.scheduler.runAfter(0, internal.actions.email.sendShippingNotification, {
+      orderId: args.id,
+    });
+  },
+});
+
+// Validates that a customer is allowed to self-serve cancel this order
+// (nothing has shipped yet, so the refund is unambiguous) and returns what
+// the client needs to trigger the actual Stripe refund action. The refund
+// itself runs as a client-invoked action (src/app/account calls
+// api.actions.stripe.refundOrder directly), matching how createPaymentIntent
+// already works — keeps orders.ts from needing to reference actions/stripe.ts,
+// which would otherwise create a circular type dependency between the two.
+export const canCancel = query({
+  args: { id: v.id("orders") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return false;
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) return false;
+
+    const order = await ctx.db.get(args.id);
+    if (!order || order.userId !== user._id) return false;
+    return (
+      (order.status === "paid" || order.status === "processing") &&
+      !!order.stripePaymentIntentId
+    );
+  },
+});
+
+export const markRefunded = internalMutation({
+  args: {
+    orderId: v.id("orders"),
+    cancelledBy: v.union(v.literal("customer"), v.literal("admin")),
+    cancelReason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.orderId, {
+      status: "refunded",
+      cancelledBy: args.cancelledBy,
+      cancelReason: args.cancelReason,
+    });
+  },
+});
+
+// Return/cancellation request for orders that have already shipped — this
+// never touches money automatically. It just flags the order and notifies
+// the admin, since a real judgment call (item condition, partial refund,
+// etc.) is needed once something has left the building.
+export const requestReturn = mutation({
+  args: { id: v.id("orders"), reason: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) throw new Error("User not found");
+
+    const order = await ctx.db.get(args.id);
+    if (!order) throw new Error("Order not found");
+    if (order.userId !== user._id) throw new Error("Forbidden");
+    if (order.status !== "shipped" && order.status !== "delivered") {
+      throw new Error("Returns are only available for shipped orders.");
+    }
+    if (order.returnRequested) {
+      throw new Error("A return has already been requested for this order.");
+    }
+
+    await ctx.db.patch(args.id, {
+      returnRequested: true,
+      returnReason: args.reason,
+      returnRequestedAt: Date.now(),
+    });
+
+    await ctx.scheduler.runAfter(0, internal.actions.email.sendReturnRequestNotification, {
+      orderId: args.id,
+      customerEmail: user.email,
+      customerName: user.name,
+      reason: args.reason,
+    });
+  },
+});
+
+// One-time backfill for orders paid before paidAt existed — approximates
+// paidAt with _creationTime so historical orders still show up in analytics.
+export const backfillPaidAt = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+    const orders = await ctx.db.query("orders").collect();
+    let updated = 0;
+    for (const o of orders) {
+      const isPaidStage =
+        o.status === "paid" ||
+        o.status === "processing" ||
+        o.status === "shipped" ||
+        o.status === "delivered";
+      if (isPaidStage && o.paidAt === undefined) {
+        await ctx.db.patch(o._id, { paidAt: o._creationTime });
+        updated++;
+      }
+    }
+    return { updated };
+  },
+});
+
+export const analytics = query({
+  args: {
+    startDate: v.number(),
+    endDate: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    const allOrders = await ctx.db.query("orders").collect();
+    const ordersInRange = allOrders.filter(
+      (o) => o.paidAt !== undefined && o.paidAt >= args.startDate && o.paidAt <= args.endDate
+    );
+
+    // Gross = every order that was ever paid, in the period (regardless of
+    // what happened to it since). Refunded = the subset later refunded.
+    // Net = what actually stayed in the business — this is "Revenue" on the
+    // dashboard, since a refunded order's paidAt sale shouldn't still count.
+    const REVENUE_STATUSES = new Set(["paid", "processing", "shipped", "delivered"]);
+    const paidOrders = ordersInRange.filter((o) => REVENUE_STATUSES.has(o.status));
+    const refundedOrders = ordersInRange.filter((o) => o.status === "refunded");
+
+    const grossRevenue = ordersInRange.reduce((sum, o) => sum + o.total, 0);
+    const refundedAmount = refundedOrders.reduce((sum, o) => sum + o.total, 0);
+    const totalRevenue = grossRevenue - refundedAmount;
+    const orderCount = paidOrders.length;
+    const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
+
+    const revenueByDay = new Map<string, number>();
+    for (const o of paidOrders) {
+      const day = new Date(o.paidAt!).toISOString().slice(0, 10);
+      revenueByDay.set(day, (revenueByDay.get(day) ?? 0) + o.total);
+    }
+    for (const o of refundedOrders) {
+      const day = new Date(o.paidAt!).toISOString().slice(0, 10);
+      revenueByDay.set(day, (revenueByDay.get(day) ?? 0) - o.total);
+    }
+    const trend = Array.from(revenueByDay.entries())
+      .map(([date, revenue]) => ({ date, revenue }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const statusBreakdown = new Map<string, number>();
+    for (const o of allOrders) {
+      if (o._creationTime < args.startDate || o._creationTime > args.endDate) continue;
+      statusBreakdown.set(o.status, (statusBreakdown.get(o.status) ?? 0) + 1);
+    }
+
+    const productSales = new Map<string, { name: string; units: number; revenue: number }>();
+    for (const o of paidOrders) {
+      for (const item of o.items) {
+        const key = item.productId;
+        const existing = productSales.get(key) ?? { name: item.name, units: 0, revenue: 0 };
+        existing.units += item.quantity;
+        existing.revenue += item.price * item.quantity;
+        productSales.set(key, existing);
+      }
+    }
+    const products = Array.from(productSales.entries())
+      .map(([productId, data]) => ({ productId, ...data }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    return {
+      grossRevenue,
+      refundedAmount,
+      totalRevenue,
+      orderCount,
+      avgOrderValue,
+      trend,
+      statusBreakdown: Array.from(statusBreakdown.entries()).map(([status, count]) => ({ status, count })),
+      products,
+    };
   },
 });

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
@@ -213,6 +213,7 @@ function CheckoutInner() {
   const myPending = useQuery(api.orders.listMyPending)
   const [resumeError, setResumeError] = useState<string | null>(null)
   const [resumeStarted, setResumeStarted] = useState(false)
+  const resumeStartedRef = useRef(false)
 
   const [step, setStep] = useState(0)
   const [maxStep, setMaxStep] = useState(0)
@@ -256,12 +257,13 @@ function CheckoutInner() {
   }, [convexUser])
 
   useEffect(() => {
-    if (!resumeOrderId || resumeStarted || resumeOrder === undefined) return
+    if (!resumeOrderId || resumeStartedRef.current || resumeOrder === undefined) return
     if (resumeOrder === null) { setResumeError('Order not found.'); return }
     if (resumeOrder.status !== 'pending') {
       setResumeError('This order can no longer be paid.')
       return
     }
+    resumeStartedRef.current = true
     setResumeStarted(true)
     setShipping(s => ({
       ...s,

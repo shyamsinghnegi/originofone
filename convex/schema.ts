@@ -35,6 +35,7 @@ export default defineSchema({
     onboardingComplete: v.optional(v.boolean()),
     role: v.union(v.literal("customer"), v.literal("admin")),
     addresses: v.array(address),
+    stripeCustomerId: v.optional(v.string()),
   })
     .index("by_clerk_id", ["clerkId"])
     .index("by_email", ["email"]),
@@ -93,6 +94,7 @@ export default defineSchema({
     ),
     stripePaymentIntentId: v.optional(v.string()),
     paymentDueAt: v.optional(v.number()),
+    paidAt: v.optional(v.number()),
     shippingAddress: v.object({
       line1: v.string(),
       line2: v.optional(v.string()),
@@ -114,10 +116,16 @@ export default defineSchema({
       })
     ),
     notes: v.optional(v.string()),
+    cancelledBy: v.optional(v.union(v.literal("customer"), v.literal("admin"))),
+    cancelReason: v.optional(v.string()),
+    returnRequested: v.optional(v.boolean()),
+    returnReason: v.optional(v.string()),
+    returnRequestedAt: v.optional(v.number()),
   })
     .index("by_user_id", ["userId"])
     .index("by_stripe_payment_intent", ["stripePaymentIntentId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_paid_at", ["paidAt"]),
 
   cart: defineTable({
     userId: v.id("users"),
