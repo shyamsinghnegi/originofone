@@ -154,6 +154,8 @@ export const updateDetails = mutation({
     phone: v.optional(v.string()),
     gender: v.optional(v.string()),
     dob: v.optional(v.string()),
+    preferredTopSize: v.optional(v.string()),
+    preferredBottomSize: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();

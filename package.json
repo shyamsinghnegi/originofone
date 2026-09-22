@@ -11,6 +11,8 @@
     "@aws-sdk/client-s3": "^3.1035.0",
     "@aws-sdk/s3-request-presigner": "^3.1035.0",
     "@clerk/nextjs": "^7.2.5",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
     "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.3.1",
     "@tailwindcss/postcss": "^4.2.2",

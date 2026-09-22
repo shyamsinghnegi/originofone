@@ -1,8 +1,17 @@
 "use node";
+import * as React from "react";
 import { Resend } from "resend";
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
 import { api, internal } from "../_generated/api";
+import { render } from "@react-email/render";
+
+import { OrderConfirmationEmail } from "../emails/OrderConfirmation";
+import { ShippingNotificationEmail } from "../emails/ShippingNotification";
+import { PendingPaymentEmail } from "../emails/PendingPayment";
+import { AbandonedCartEmail } from "../emails/AbandonedCart";
+import { RefundConfirmationEmail } from "../emails/RefundConfirmation";
+import { ReturnNotificationEmail } from "../emails/ReturnNotification";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY!);
@@ -10,7 +19,7 @@ function getResend() {
 
 async function sendEmail(
   resend: Resend,
-  payload: { from: string; to: string; subject: string; text: string }
+  payload: { from: string; to: string; subject: string; html: string; text?: string }
 ) {
   const { data, error } = await resend.emails.send(payload);
   if (error) {
@@ -50,37 +59,39 @@ export const sendOrderConfirmation = internalAction({
 
     const resend = getResend();
     const orderNumber = args.orderId.slice(-8).toUpperCase();
-    const itemsList = order.items
-      .map((i: any) => `${i.name} (${i.color}, ${i.size}) × ${i.quantity} — $${(i.price * i.quantity).toFixed(2)}`)
-      .join("\n");
+
+    // Use synchronous render from @react-email/render
+    const html = await render(
+      <OrderConfirmationEmail
+        orderNumber={orderNumber}
+        userName={user.name ?? "there"}
+        status={STATUS_LABELS[order.status] ?? order.status}
+        items={order.items.map((i: any) => ({
+          name: i.name,
+          color: i.color,
+          size: i.size,
+          quantity: i.quantity,
+          price: i.price,
+        }))}
+        subtotal={order.subtotal}
+        shippingCost={order.shippingCost}
+        tax={order.tax}
+        total={order.total}
+        shippingAddress={{
+          line1: order.shippingAddress.line1,
+          city: order.shippingAddress.city,
+          province: order.shippingAddress.province,
+        }}
+        trackingUrl={order.tracking?.url}
+        userEmail={user.email}
+      />
+    );
 
     await sendEmail(resend, {
       from: FROM_ORDERS,
       to: user.email,
       subject: `Order Confirmed — #${orderNumber}`,
-      text: [
-        `Hi ${user.name ?? "there"},`,
-        "",
-        "Thanks for your order! Here's a summary:",
-        "",
-        `Order #: ${orderNumber}`,
-        `Status: ${STATUS_LABELS[order.status] ?? order.status}`,
-        "",
-        itemsList,
-        "",
-        `Subtotal: $${order.subtotal.toFixed(2)}`,
-        `Shipping: $${order.shippingCost.toFixed(2)}`,
-        `Tax: $${order.tax.toFixed(2)}`,
-        `Total: $${order.total.toFixed(2)}`,
-        "",
-        `Shipping to: ${order.shippingAddress.line1}, ${order.shippingAddress.city}, ${order.shippingAddress.province}`,
-        "",
-        order.tracking
-          ? `Track your order: ${order.tracking.url}`
-          : "We'll send another email with tracking once your order ships.",
-        "",
-        "— Origin of One",
-      ].join("\n"),
+      html,
     });
   },
 });
@@ -97,22 +108,23 @@ export const sendShippingNotification = internalAction({
     const resend = getResend();
     const orderNumber = args.orderId.slice(-8).toUpperCase();
 
+    const html = await render(
+      <ShippingNotificationEmail
+        orderNumber={orderNumber}
+        userName={user.name ?? "there"}
+        status={STATUS_LABELS[order.status] ?? order.status}
+        carrier={order.tracking.carrier}
+        trackingNumber={order.tracking.trackingNumber}
+        trackingUrl={order.tracking.url}
+        userEmail={user.email}
+      />
+    );
+
     await sendEmail(resend, {
       from: FROM_ORDERS,
       to: user.email,
       subject: `Your order has shipped — #${orderNumber}`,
-      text: [
-        `Hi ${user.name ?? "there"},`,
-        "",
-        `Order #${orderNumber} is on its way!`,
-        "",
-        `Status: ${STATUS_LABELS[order.status] ?? order.status}`,
-        `Carrier: ${order.tracking.carrier}`,
-        `Tracking Number: ${order.tracking.trackingNumber}`,
-        `Track your order: ${order.tracking.url}`,
-        "",
-        "— Origin of One",
-      ].join("\n"),
+      html,
     });
   },
 });
@@ -128,23 +140,23 @@ export const sendPendingPaymentEmail = internalAction({
     const resend = getResend();
     const siteUrl = process.env.SITE_URL ?? "https://originofone.ca";
     const resumeLink = `${siteUrl}/checkout?resume=${args.orderId}`;
+    const orderNumber = args.orderId.slice(-8).toUpperCase();
+
+    const html = await render(
+      <PendingPaymentEmail
+        orderNumber={orderNumber}
+        userName={args.userName ?? "there"}
+        total={args.total}
+        resumeLink={resumeLink}
+        userEmail={args.userEmail}
+      />
+    );
 
     await sendEmail(resend, {
       from: FROM_ORDERS,
       to: args.userEmail,
       subject: "Complete your payment — your order is reserved",
-      text: [
-        `Hi ${args.userName ?? "there"},`,
-        "",
-        `Your order (total $${args.total.toFixed(2)} CAD) is reserved but the payment wasn't completed.`,
-        "",
-        "Complete your payment within 1 hour to secure your order:",
-        resumeLink,
-        "",
-        "After that, the reservation is released and the order is cancelled.",
-        "",
-        "— Origin of One",
-      ].join("\n"),
+      html,
     });
   },
 });
@@ -157,20 +169,23 @@ export const sendAbandonedCartEmail = internalAction({
   },
   handler: async (ctx, args) => {
     const resend = getResend();
+    const siteUrl = process.env.SITE_URL ?? "https://originofone.ca";
+    const cartUrl = `${siteUrl}/cart`;
+
+    const html = await render(
+      <AbandonedCartEmail
+        userName={args.userName ?? "there"}
+        itemCount={args.itemCount}
+        cartUrl={cartUrl}
+        userEmail={args.userEmail}
+      />
+    );
+
     await sendEmail(resend, {
       from: FROM_HELLO,
       to: args.userEmail,
       subject: "You left something behind",
-      text: [
-        `Hi ${args.userName ?? "there"},`,
-        "",
-        `You left ${args.itemCount} item${args.itemCount !== 1 ? "s" : ""} in your cart.`,
-        "Your selection is still waiting for you.",
-        "",
-        "Complete your order: https://originofone.ca/cart",
-        "",
-        "— Origin of One",
-      ].join("\n"),
+      html,
     });
   },
 });
@@ -185,19 +200,22 @@ export const sendRefundConfirmation = internalAction({
     if (!user) return;
 
     const resend = getResend();
+    const orderNumber = args.orderId.slice(-8).toUpperCase();
+
+    const html = await render(
+      <RefundConfirmationEmail
+        orderNumber={orderNumber}
+        userName={user.name ?? "there"}
+        total={order.total}
+        userEmail={user.email}
+      />
+    );
+
     await sendEmail(resend, {
       from: FROM_ORDERS,
       to: user.email,
-      subject: `Order Cancelled & Refunded — #${args.orderId.slice(-8).toUpperCase()}`,
-      text: [
-        `Hi ${user.name ?? "there"},`,
-        "",
-        `Your order #${args.orderId.slice(-8).toUpperCase()} has been cancelled and a full refund of $${order.total.toFixed(2)} CAD has been issued to your original payment method.`,
-        "",
-        "Refunds typically take 5–10 business days to appear on your statement.",
-        "",
-        "— Origin of One",
-      ].join("\n"),
+      subject: `Order Cancelled & Refunded — #${orderNumber}`,
+      html,
     });
   },
 });
@@ -215,18 +233,25 @@ export const sendReturnRequestNotification = internalAction({
       return;
     }
     const resend = getResend();
+    const orderNumber = args.orderId.slice(-8).toUpperCase();
+    const siteUrl = process.env.SITE_URL ?? "https://originofone.ca";
+    const adminUrl = `${siteUrl}/admin/orders`;
+
+    const html = await render(
+      <ReturnNotificationEmail
+        orderNumber={orderNumber}
+        customerName={args.customerName ?? "—"}
+        customerEmail={args.customerEmail}
+        reason={args.reason}
+        adminUrl={adminUrl}
+      />
+    );
+
     await sendEmail(resend, {
       from: FROM_HELLO,
       to: ADMIN_EMAIL,
-      subject: `Return requested — #${args.orderId.slice(-8).toUpperCase()}`,
-      text: [
-        `Order #${args.orderId.slice(-8).toUpperCase()} has a return request.`,
-        "",
-        `Customer: ${args.customerName ?? "—"} (${args.customerEmail})`,
-        `Reason: ${args.reason}`,
-        "",
-        `Review it in the admin panel: https://originofone.ca/admin/orders`,
-      ].join("\n"),
+      subject: `Return requested — #${orderNumber}`,
+      html,
     });
   },
 });
