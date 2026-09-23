@@ -34,4 +34,3 @@ export default function CollectionCategoryPage({ params }: { params: Promise<{ c
   )
 }
 
-export const runtime = 'edge'

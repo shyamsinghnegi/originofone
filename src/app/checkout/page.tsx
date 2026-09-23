@@ -689,5 +689,5 @@ export default function CheckoutPage() {
   )
 }
 
-export const runtime = 'edge'
+
 

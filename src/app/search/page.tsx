@@ -404,5 +404,5 @@ export default function SearchPage() {
   )
 }
 
-export const runtime = 'edge'
+
 

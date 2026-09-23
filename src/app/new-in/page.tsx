@@ -20,5 +20,5 @@ export default function NewInPage() {
   )
 }
 
-export const runtime = 'edge'
+
 

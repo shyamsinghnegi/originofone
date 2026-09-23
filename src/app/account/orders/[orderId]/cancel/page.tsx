@@ -240,4 +240,3 @@ export default function CancelOrderPage({ params }: { params: Promise<{ orderId:
   )
 }
 
-export const runtime = 'edge'

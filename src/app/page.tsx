@@ -244,5 +244,5 @@ export default function HomePage() {
   )
 }
 
-export const runtime = 'edge'
+
 

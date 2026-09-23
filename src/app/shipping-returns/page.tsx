@@ -77,5 +77,5 @@ export default function ShippingReturnsPage() {
   )
 }
 
-export const runtime = 'edge'
+
 

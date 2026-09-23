@@ -417,5 +417,5 @@ export default function AdminProductsPage() {
   );
 }
 
-export const runtime = 'edge'
+
 

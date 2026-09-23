@@ -256,5 +256,5 @@ function StatCard({ label, value, accent }: { label: string; value: string | num
   );
 }
 
-export const runtime = 'edge'
+
 

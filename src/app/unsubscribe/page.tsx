@@ -250,5 +250,5 @@ export default function UnsubscribePage() {
   )
 }
 
-export const runtime = 'edge'
+
 

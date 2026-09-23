@@ -707,5 +707,5 @@ export default function AccountPage() {
 }
 
 
-export const runtime = 'edge'
+
 

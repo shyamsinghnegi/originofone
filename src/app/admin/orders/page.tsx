@@ -316,5 +316,5 @@ export default function AdminOrdersPage() {
   );
 }
 
-export const runtime = 'edge'
+
 

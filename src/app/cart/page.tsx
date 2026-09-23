@@ -118,5 +118,5 @@ export default function CartPage() {
   )
 }
 
-export const runtime = 'edge'
+
 

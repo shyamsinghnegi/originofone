@@ -45,4 +45,3 @@ export default function SignUpPage() {
   )
 }
 
-export const runtime = 'edge'

@@ -52,5 +52,5 @@ export default function FaqPage() {
   )
 }
 
-export const runtime = 'edge'
+
 

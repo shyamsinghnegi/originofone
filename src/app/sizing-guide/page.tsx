@@ -75,5 +75,5 @@ export default function SizingGuidePage() {
   )
 }
 
-export const runtime = 'edge'
+
 
