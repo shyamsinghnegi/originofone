@@ -44,3 +44,5 @@ export default function SignInPage() {
     </div>
   )
 }
+
+export const runtime = 'edge'

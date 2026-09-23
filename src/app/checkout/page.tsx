@@ -688,3 +688,6 @@ export default function CheckoutPage() {
     </Suspense>
   )
 }
+
+export const runtime = 'edge'
+

@@ -249,3 +249,6 @@ export default function UnsubscribePage() {
     </Suspense>
   )
 }
+
+export const runtime = 'edge'
+

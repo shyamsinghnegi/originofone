@@ -65,3 +65,6 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ received: true });
 }
+
+export const runtime = 'edge'
+

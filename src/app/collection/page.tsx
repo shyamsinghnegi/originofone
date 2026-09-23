@@ -74,3 +74,6 @@ export default function CollectionsPage() {
     </>
   )
 }
+
+export const runtime = 'edge'
+

@@ -255,3 +255,6 @@ function StatCard({ label, value, accent }: { label: string; value: string | num
     </div>
   );
 }
+
+export const runtime = 'edge'
+

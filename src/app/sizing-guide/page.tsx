@@ -74,3 +74,6 @@ export default function SizingGuidePage() {
     </LegalPage>
   )
 }
+
+export const runtime = 'edge'
+

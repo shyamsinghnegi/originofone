@@ -51,3 +51,6 @@ export default function FaqPage() {
     </LegalPage>
   )
 }
+
+export const runtime = 'edge'
+

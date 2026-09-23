@@ -403,3 +403,6 @@ export default function SearchPage() {
     </Suspense>
   )
 }
+
+export const runtime = 'edge'
+

@@ -621,3 +621,5 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     </>
   )
 }
+
+export const runtime = 'edge'

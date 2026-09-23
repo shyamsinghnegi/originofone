@@ -182,3 +182,6 @@ export default function ConfirmationPage() {
     </>
   )
 }
+
+export const runtime = 'edge'
+

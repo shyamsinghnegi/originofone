@@ -190,3 +190,5 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
     </>
   )
 }
+
+export const runtime = 'edge'

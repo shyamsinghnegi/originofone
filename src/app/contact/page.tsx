@@ -35,3 +35,6 @@ export default function ContactPage() {
     </>
   )
 }
+
+export const runtime = 'edge'
+

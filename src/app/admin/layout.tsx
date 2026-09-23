@@ -59,3 +59,6 @@ export default function AdminLayout({
     </div>
   );
 }
+
+export const runtime = 'edge'
+

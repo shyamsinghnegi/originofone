@@ -34,3 +34,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message }, { status: 403 });
   }
 }
+
+export const runtime = 'edge'
+

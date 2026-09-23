@@ -17,3 +17,6 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ clientSecret: intent.client_secret });
 }
+
+export const runtime = 'edge'
+

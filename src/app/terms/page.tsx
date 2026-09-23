@@ -92,3 +92,6 @@ export default function TermsPage() {
     </LegalPage>
   )
 }
+
+export const runtime = 'edge'
+

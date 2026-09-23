@@ -44,3 +44,5 @@ export default function SignUpPage() {
     </div>
   )
 }
+
+export const runtime = 'edge'

@@ -315,3 +315,6 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
+
+export const runtime = 'edge'
+

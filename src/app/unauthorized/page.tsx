@@ -17,3 +17,6 @@ export default function UnauthorizedPage() {
     </div>
   )
 }
+
+export const runtime = 'edge'
+
