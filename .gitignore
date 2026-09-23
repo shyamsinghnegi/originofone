@@ -42,3 +42,11 @@ convex/seed.ts
 # local assets / scratch (hosted on Cloudflare R2)
 public/images/
 scratch/
+
+# OpenNext
+.open-next
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
