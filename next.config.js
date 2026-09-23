@@ -18,6 +18,8 @@ const staticSecurityHeaders = [
 const nextConfig = {
   productionBrowserSourceMaps: true,
   images: {
+    minimumCacheTTL: 2592000,
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "plus.unsplash.com" },

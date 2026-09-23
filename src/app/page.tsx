@@ -19,6 +19,7 @@ const HERO_SLIDES = [
     label: 'SHOP COLLECTION',
     href: '/collection/all',
     image: 'https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/hero/hero-slide-1.jpg',
+    mobileImage: 'https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/hero/hero-mobile-1.jpg',
   },
   {
     bg: '#111111',
@@ -26,6 +27,7 @@ const HERO_SLIDES = [
     label: 'NEW IN',
     href: '/new-in',
     image: 'https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/hero/hero-slide-2.jpg',
+    mobileImage: 'https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/products/tundra-wool-overcoat-1.jpg',
   },
   {
     bg: '#141414',
@@ -33,13 +35,22 @@ const HERO_SLIDES = [
     label: 'EXPLORE ALL',
     href: '/collection/all',
     image: 'https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev/hero/hero-slide-3.jpg',
+    mobileImage: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1080&q=85',
   },
 ]
 
 const NAV_H  = 60
 const SLIDES = HERO_SLIDES.length
 
-type SlideContent = { bg?: string; eyebrow: string; label: string; href: string; image?: string; figure?: string }
+type SlideContent = {
+  bg?: string
+  eyebrow: string
+  label: string
+  href: string
+  image?: string
+  mobileImage?: string
+  figure?: string
+}
 
 function SlideInner({ content, index, total, isFirst, isRightSplit, isLastSlide }: {
   content: SlideContent
@@ -57,12 +68,17 @@ function SlideInner({ content, index, total, isFirst, isRightSplit, isLastSlide 
       {/* Editorial Hero Background Image */}
       {content.image && (
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={content.image}
-            alt={content.label}
-            className="w-full h-full object-cover object-center brightness-90 scale-100"
-          />
+          <picture>
+            {content.mobileImage && (
+              <source media="(max-width: 768px)" srcSet={content.mobileImage} />
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={content.image}
+              alt={content.label}
+              className="w-full h-full object-cover object-center brightness-90 scale-100"
+            />
+          </picture>
           {/* Dark cinematic vignette matching About page for seamless slide transitions */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/30 pointer-events-none" />
           <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />

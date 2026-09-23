@@ -1,6 +1,5 @@
-// ── Button ──────────────────────────────────────────────
 'use client'
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useQuickAdd } from '@/lib/quickAddContext'
@@ -161,7 +160,7 @@ function PlaceholderFigure({ tint }: { tint: string }) {
   )
 }
 
-export function ProductCard({ id, productId, name, price, originalPrice, badge, slides, image, images, variants }: ProductCardProps) {
+function ProductCardComponent({ id, productId, name, price, originalPrice, badge, slides, image, images, variants }: ProductCardProps) {
   const [imgIndex, setImgIndex] = useState(0)
   const [hovered,  setHovered]  = useState(false)
   const quickAdd = useQuickAdd()
@@ -211,22 +210,38 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
   const figureTint = studio.figureTint
 
   return (
-    <Link href={`/product/${id}`} className="group block">
+    <Link
+      href={`/product/${id}`}
+      prefetch={true}
+      className="group block"
+      onMouseEnter={() => {
+        setHovered(true)
+        router.prefetch(`/product/${id}`)
+      }}
+      onMouseLeave={() => setHovered(false)}
+    >
       {/* ── Card image area ── */}
       <div
         className="aspect-3/4 relative overflow-hidden rounded-xl mb-2 transition-colors duration-500 bg-neutral-100"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
       >
-        {currentImage ? (
-          <Image
-            src={currentImage}
-            alt={name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-            priority={imgIndex === 0}
-          />
+        {cardImages.length > 0 ? (
+          cardImages.map((src, i) => (
+            <div
+              key={i}
+              className={`absolute inset-0 transition-opacity duration-300 ${
+                i === imgIndex ? 'opacity-100 z-1' : 'opacity-0 z-0 pointer-events-none'
+              }`}
+            >
+              <Image
+                src={src}
+                alt={`${name} - View ${i + 1}`}
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                priority={i === 0}
+              />
+            </div>
+          ))
         ) : (
           <PlaceholderFigure tint={figureTint} />
         )}
@@ -242,8 +257,10 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
         <button
           onClick={handleToggleWishlist}
           aria-label="Toggle wishlist"
-          className={`absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center transition-colors ${
-            isWishlisted ? 'text-red-500 animate-like' : 'text-black/40 hover:text-black/80'
+          className={`absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 ${
+            isWishlisted
+              ? 'text-red-500 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] animate-like'
+              : 'text-black drop-shadow-[0_1px_2px_rgba(255,255,255,0.85)]'
           }`}
         >
           {isWishlisted ? (
@@ -251,7 +268,7 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
             </svg>
           ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
             </svg>
           )}
@@ -323,6 +340,8 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
     </Link>
   )
 }
+
+export const ProductCard = memo(ProductCardComponent)
 
 // ── Footer ───────────────────────────────────────────────
 export function Footer() {

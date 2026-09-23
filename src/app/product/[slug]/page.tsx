@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/../convex/_generated/api'
+import { useCachedQuery } from '@/lib/useCachedQuery'
 import { useCart } from '@/lib/cartContext'
 import { ProductCard, Footer, COLOR_MAP, COLOR_TO_BG } from '@/components/ui'
 import { categoryToSlug } from '@/components/ProductGridPage'
@@ -48,10 +49,11 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
   const router = useRouter()
   const { user } = useUser()
 
-  const product = useQuery(api.products.getBySlug, { slug })
-  const related = useQuery(
+  const product = useCachedQuery(api.products.getBySlug, { slug }, `product:${slug}`)
+  const related = useCachedQuery(
     api.products.getRelated,
-    product ? { category: product.category, excludeSlug: product.slug } : 'skip'
+    product ? { category: product.category, excludeSlug: product.slug } : 'skip',
+    product ? `related:${product.category}:${product.slug}` : 'skip'
   )
   const toggleWishlist = useMutation(api.wishlist.toggle)
   const wishlist = useQuery(api.wishlist.listMine, user ? undefined : 'skip')
@@ -222,15 +224,24 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
             <div className="lg:hidden flex flex-col gap-3">
               {/* Main active image */}
               <div className="relative aspect-4/5 sm:aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-100 shadow-sm">
-                {galleryImages[activeMobileImg] ? (
-                  <Image
-                    src={galleryImages[activeMobileImg]}
-                    alt={`${product.name} - View ${activeMobileImg + 1}`}
-                    fill
-                    priority
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-cover object-center transition-all duration-300"
-                  />
+                {galleryImages.length > 0 ? (
+                  galleryImages.map((src, i) => (
+                    <div
+                      key={i}
+                      className={`absolute inset-0 transition-opacity duration-300 ${
+                        activeMobileImg === i ? 'opacity-100 z-1' : 'opacity-0 z-0 pointer-events-none'
+                      }`}
+                    >
+                      <Image
+                        src={src}
+                        alt={`${product.name} - View ${i + 1}`}
+                        fill
+                        priority={i === 0}
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                        className="object-cover object-center"
+                      />
+                    </div>
+                  ))
                 ) : (
                   <div className="w-full h-full flex items-center justify-center" style={{ background: bgColor }} />
                 )}
