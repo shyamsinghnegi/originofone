@@ -6,7 +6,7 @@ node_modules/
 out/
 
 # Convex
-convex/_generated/
+# convex/_generated/ is committed to Git so Cloudflare Pages has the types at build time
 
 # environment
 .env
