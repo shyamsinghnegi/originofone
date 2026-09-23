@@ -61,6 +61,7 @@ export function HomeProductSection({ eyebrow, title, viewAllHref, filter, limit 
                 originalPrice={p.compareAtPrice}
                 badge={badgeFromTags(p.tags)}
                 image={p.images[0]}
+                images={p.images}
                 variants={p.variants}
               />
             ))}

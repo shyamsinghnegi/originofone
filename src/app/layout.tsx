@@ -46,7 +46,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <ClerkProvider>
       <html lang="en" className={`${editorial.variable} ${body.variable}`}>
-        <head />
+        <head>
+          <link rel="preconnect" href="https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev" crossOrigin="anonymous" />
+          <link rel="dns-prefetch" href="https://pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev" />
+        </head>
         <body>
           <ConvexClerkProvider>
             <CartProvider>

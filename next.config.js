@@ -22,6 +22,8 @@ const nextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "plus.unsplash.com" },
       { protocol: "https", hostname: "images.pexels.com" },
+      { protocol: "https", hostname: "pub-ec92ce1f747e4291a5b3bfb149ddf271.r2.dev" },
+      { protocol: "https", hostname: "*.r2.dev" },
     ],
   },
   async headers() {

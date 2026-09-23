@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo, use } from 'react'
+import { useState, useMemo, useEffect, use } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { useQuery, useMutation } from 'convex/react'
@@ -62,6 +63,11 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
   const [qty, setQty] = useState(1)
   const [activeTab, setActiveTab] = useState<'details' | 'washcare' | 'shipping'>('details')
   const [added, setAdded] = useState(false)
+  const [activeMobileImg, setActiveMobileImg] = useState(0)
+
+  useEffect(() => {
+    setActiveMobileImg(0)
+  }, [slug])
 
   const uniqueColors = useMemo(() => {
     if (!product) return []
@@ -192,11 +198,13 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
             {/* ── 1. LEFT FIXED HERO IMAGE (Desktop Sticky) ── */}
             <div className="hidden lg:block sticky top-[80px] h-[calc(100vh-100px)] rounded-2xl overflow-hidden bg-neutral-100 shadow-sm relative group">
               {heroImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={heroImage}
                   alt={`${product.name} - Front View`}
-                  className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.02]"
+                  fill
+                  priority
+                  sizes="(max-width: 1280px) 40vw, 35vw"
+                  className="object-cover object-center transition-transform duration-700 group-hover:scale-[1.02]"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center" style={{ background: bgColor }}>
@@ -210,38 +218,104 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
               )}
             </div>
 
-            {/* ── 2. SCROLLABLE GALLERY COLUMN (Vertical Feed) ── */}
-            <div className="flex flex-col gap-4 md:gap-5">
-              {/* Mobile hero view (visible only on mobile) */}
-              <div className="lg:hidden rounded-2xl overflow-hidden bg-neutral-100 aspect-4/5 sm:aspect-[3/4] relative shadow-sm">
-                {heroImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={heroImage}
-                    alt={product.name}
-                    className="w-full h-full object-cover object-center"
+            {/* ── MOBILE GALLERY (Mobile Only, < lg) ── */}
+            <div className="lg:hidden flex flex-col gap-3">
+              {/* Main active image */}
+              <div className="relative aspect-4/5 sm:aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-100 shadow-sm">
+                {galleryImages[activeMobileImg] ? (
+                  <Image
+                    src={galleryImages[activeMobileImg]}
+                    alt={`${product.name} - View ${activeMobileImg + 1}`}
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover object-center transition-all duration-300"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center" style={{ background: bgColor }} />
                 )}
+
                 {badge && (
                   <span className="absolute top-4 left-4 bg-white/95 backdrop-blur-md text-black text-[10px] tracking-widest uppercase px-3 py-1 rounded-full font-mono font-medium shadow-sm z-10">
                     {badge}
                   </span>
                 )}
+
+                {/* Left and Right navigation buttons */}
+                {galleryImages.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMobileImg(i => (i - 1 + galleryImages.length) % galleryImages.length)}
+                      aria-label="Previous image"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/85 text-black shadow-md flex items-center justify-center active:scale-90 transition-transform"
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <polyline points="15 18 9 12 15 6" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMobileImg(i => (i + 1) % galleryImages.length)}
+                      aria-label="Next image"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/85 text-black shadow-md flex items-center justify-center active:scale-90 transition-transform"
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </button>
+                  </>
+                )}
+
+                {/* Counter indicator */}
+                {galleryImages.length > 1 && (
+                  <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white text-[10px] font-mono px-2.5 py-1 rounded-full z-10">
+                    {activeMobileImg + 1} / {galleryImages.length}
+                  </div>
+                )}
               </div>
 
-              {/* Scrollable detailed shots */}
+              {/* Small thumbnail boxes */}
+              {galleryImages.length > 1 && (
+                <div className="grid grid-cols-3 gap-2.5">
+                  {galleryImages.map((src, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActiveMobileImg(i)}
+                      aria-label={`Show image ${i + 1}`}
+                      className={`relative aspect-[3/4] rounded-xl overflow-hidden bg-neutral-100 transition-all duration-200 border-2 cursor-pointer ${
+                        activeMobileImg === i
+                          ? 'border-black ring-2 ring-black/10 scale-[1.02] shadow-sm opacity-100'
+                          : 'border-transparent opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <Image
+                        src={src}
+                        alt={`${product.name} thumbnail ${i + 1}`}
+                        fill
+                        sizes="120px"
+                        className="object-cover object-center"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── 2. SCROLLABLE GALLERY COLUMN (Desktop Only) ── */}
+            <div className="hidden lg:flex flex-col gap-4 md:gap-5">
               {scrollImages && scrollImages.map((src, i) => (
                 <div
                   key={i}
-                  className="rounded-2xl overflow-hidden bg-neutral-100 relative min-h-[480px] lg:min-h-[calc(100vh-100px)] w-full shadow-sm group"
+                  className="rounded-2xl overflow-hidden bg-neutral-100 relative min-h-[calc(100vh-100px)] w-full shadow-sm group"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={src}
                     alt={`${product.name} - Detail Angle ${i + 1}`}
-                    className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.02]"
+                    fill
+                    sizes="(max-width: 1280px) 40vw, 35vw"
+                    className="object-cover object-center transition-transform duration-700 group-hover:scale-[1.02]"
                   />
                 </div>
               ))}
@@ -524,6 +598,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   originalPrice={p.compareAtPrice}
                   badge={badgeFromTags(p.tags)}
                   image={p.images[0]}
+                  images={p.images}
                   variants={p.variants}
                 />
               ))}

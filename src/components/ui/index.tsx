@@ -2,6 +2,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useQuickAdd } from '@/lib/quickAddContext'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/../convex/_generated/api'
@@ -143,6 +144,7 @@ interface ProductCardProps {
   badge?: string
   slides?: string[]
   image?: string
+  images?: string[]
   variants?: { color: string; size: string; stock: number }[]
 }
 
@@ -159,7 +161,7 @@ function PlaceholderFigure({ tint }: { tint: string }) {
   )
 }
 
-export function ProductCard({ id, productId, name, price, originalPrice, badge, slides, image, variants }: ProductCardProps) {
+export function ProductCard({ id, productId, name, price, originalPrice, badge, slides, image, images, variants }: ProductCardProps) {
   const [imgIndex, setImgIndex] = useState(0)
   const [hovered,  setHovered]  = useState(false)
   const quickAdd = useQuickAdd()
@@ -171,11 +173,15 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
 
   const isWishlisted = wishlist?.some(w => w.product?._id === productId) ?? false
 
+  const cardImages: string[] = images && images.length > 0 ? images : image ? [image] : []
+  const total = cardImages.length
+  const currentImage = cardImages[imgIndex] ?? cardImages[0]
+
   function handleQuickAdd(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
     if (!productId || !variants || variants.length === 0) return
-    quickAdd.open({ productId, slug: id, name, price, originalPrice, image, variants })
+    quickAdd.open({ productId, slug: id, name, price, originalPrice, image: currentImage, variants })
   }
 
   function handleToggleWishlist(e: React.MouseEvent) {
@@ -190,34 +196,37 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
     }
   }
 
-  const slideBgs: string[] = slides ?? []
-  const total = image ? 1 : Math.max(slideBgs.length, 1)
-
   const prev = (e: React.MouseEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     setImgIndex(i => (i - 1 + total) % total)
   }
   const next = (e: React.MouseEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     setImgIndex(i => (i + 1) % total)
   }
 
   const studio = studioBackdropFor(id)
-  const currentBg = slideBgs[imgIndex] ?? studio.bg
   const figureTint = studio.figureTint
 
   return (
     <Link href={`/product/${id}`} className="group block">
       {/* ── Card image area ── */}
       <div
-        className="aspect-3/4 relative overflow-hidden rounded-xl mb-2 transition-colors duration-500"
-        style={{ background: currentBg }}
+        className="aspect-3/4 relative overflow-hidden rounded-xl mb-2 transition-colors duration-500 bg-neutral-100"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt={name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+        {currentImage ? (
+          <Image
+            src={currentImage}
+            alt={name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            priority={imgIndex === 0}
+          />
         ) : (
           <PlaceholderFigure tint={figureTint} />
         )}
@@ -250,12 +259,12 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
 
         {/* ── Slide indicators (dots) ── */}
         {total > 1 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-            {slideBgs.map((_, i) => (
+          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10 pointer-events-none">
+            {cardImages.map((_, i) => (
               <span
                 key={i}
-                className={`block rounded-full transition-all duration-200 ${
-                  i === imgIndex ? 'w-3 h-1.5 bg-black' : 'w-1.5 h-1.5 bg-black/30'
+                className={`block rounded-full transition-all duration-300 ${
+                  i === imgIndex ? 'w-3.5 h-1 bg-white shadow-xs' : 'w-1 h-1 bg-white/50'
                 }`}
               />
             ))}
@@ -265,13 +274,12 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
         {/* ── Prev arrow ── */}
         {total > 1 && (
           <button
+            type="button"
             onClick={prev}
             aria-label="Previous image"
-            className={`absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-white/90 flex items-center justify-center transition-all duration-200 ${
-              hovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'
-            }`}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/85 hover:bg-white text-black shadow-md flex items-center justify-center transition-all duration-200 opacity-90 md:opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 backdrop-blur-xs"
           >
-            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
@@ -280,13 +288,12 @@ export function ProductCard({ id, productId, name, price, originalPrice, badge, 
         {/* ── Next arrow ── */}
         {total > 1 && (
           <button
+            type="button"
             onClick={next}
             aria-label="Next image"
-            className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-white/90 flex items-center justify-center transition-all duration-200 ${
-              hovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'
-            }`}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/85 hover:bg-white text-black shadow-md flex items-center justify-center transition-all duration-200 opacity-90 md:opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 backdrop-blur-xs"
           >
-            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </button>

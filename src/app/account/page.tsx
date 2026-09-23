@@ -689,6 +689,7 @@ export default function AccountPage() {
                       price={item.product.price}
                       originalPrice={item.product.compareAtPrice}
                       image={item.product.images?.[0]}
+                      images={item.product.images}
                       variants={item.product.variants}
                     />
                   ))}
